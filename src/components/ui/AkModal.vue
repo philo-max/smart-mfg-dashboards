@@ -4,8 +4,8 @@ import { X } from '@lucide/vue'
 
 /** 弹窗挂到舞台内的 #ak-overlay，跟随舞台等比缩放 */
 const props = withDefaults(
-  defineProps<{ open: boolean; title: string; en?: string; width?: number; height?: number; color?: string }>(),
-  { en: '', width: 1180, height: 700, color: 'var(--accent)' },
+  defineProps<{ open: boolean; title: string; en?: string; width?: number; height?: number; color?: string; alert?: boolean }>(),
+  { en: '', width: 1180, height: 700, color: 'var(--accent)', alert: false },
 )
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
 const dialog = ref<HTMLDivElement | null>(null)
@@ -37,7 +37,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <Teleport defer to="#ak-overlay">
-    <div v-if="open" class="ak-modal-mask" @click.self="close">
+    <div v-if="open" class="ak-modal-mask" :data-alert="alert || undefined" @click.self="close">
       <div
         ref="dialog"
         class="ak-modal"

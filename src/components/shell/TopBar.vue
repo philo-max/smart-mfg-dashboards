@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Activity, Bell, ChevronLeft, FlaskConical, Gauge, House, Package, Pause, ScanLine, ShieldCheck } from '@lucide/vue'
+import { Activity, Bell, ChevronLeft, FlaskConical, Gauge, House, MonitorPlay, Package, Pause, ScanLine, ShieldCheck } from '@lucide/vue'
 import { HUB_META } from '@/data/modules'
 import { usePlantStore } from '@/stores/plant'
 import { useUiStore } from '@/stores/ui'
@@ -38,6 +38,7 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
     <div class="top__res">
       <span v-if="plant.paused" class="chip chip--pause"><Pause :size="13" />已暂停</span>
       <span v-else-if="plant.speed > 1" class="chip chip--speed ak-num">{{ plant.speed }}× 倍速</span>
+      <button type="button" class="drill drill--tour" :class="{ 'is-open': ui.tour }" :aria-pressed="ui.tour" @click="ui.toggleTour()"><MonitorPlay :size="16" />{{ ui.tour ? '巡视中' : '巡视' }}</button>
       <button type="button" class="drill drill--trace" @click="ui.openTrace('')"><ScanLine :size="16" />追溯</button>
       <button type="button" class="drill" :class="{ 'is-open': ui.consoleOpen }" :aria-pressed="ui.consoleOpen" @click="ui.toggleConsole()">
         <FlaskConical :size="16" />演练台
@@ -189,6 +190,9 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
   background: rgba(255, 210, 60, 0.08);
   border: 1px solid rgba(255, 210, 60, 0.45);
 }
+
+.drill--tour { color: var(--signal-pos); background: rgba(71, 209, 140, 0.08); border-color: rgba(71, 209, 140, 0.4); }
+.drill--tour:hover, .drill--tour.is-open { color: #0a0c0f; background: var(--signal-pos); border-color: var(--signal-pos); }
 
 .drill--trace { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
 .drill--trace:hover { color: #0a0c0f; background: var(--accent); border-color: var(--accent); }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, type Component } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from 'vue'
 import TopBar from './TopBar.vue'
 import AlarmToast from './AlarmToast.vue'
 import ScenarioConsole from './ScenarioConsole.vue'
@@ -17,6 +17,7 @@ import { usePlantStore } from '@/stores/plant'
 import { useUiStore, type ViewId } from '@/stores/ui'
 
 const DESIGN_W = 1920
+const TOUR_DWELL_MS = 12000
 const DESIGN_H = 1080
 
 const VIEWS: Record<ViewId, Component> = {
@@ -41,18 +42,39 @@ function fit() {
   scale.value = Math.min(el.clientWidth / DESIGN_W, el.clientHeight / DESIGN_H)
 }
 
+/** 大屏自动巡视：总览与五个模块依次轮播；弹窗打开时暂缓；手动切换视图后重新计时 */
+const TOUR_ORDER: ViewId[] = ['overview', ...MODULE_ORDER]
+let tourTimer: number | null = null
+
+/** 用户主动打开的弹窗（不含系统自动弹出的告警窗）：巡视与快捷键都要让路 */
+const USER_MODAL = '#ak-overlay .ak-modal-mask:not([data-alert])'
+
+function stepTour() {
+  if (document.querySelector(USER_MODAL)) return
+  const next = (TOUR_ORDER.indexOf(ui.view) + 1) % TOUR_ORDER.length
+  ui.navigate(TOUR_ORDER[next])
+}
+
+function scheduleTour() {
+  if (tourTimer !== null) window.clearInterval(tourTimer)
+  tourTimer = ui.tour ? window.setInterval(stepTour, TOUR_DWELL_MS) : null
+}
+
+watch(() => [ui.tour, ui.view], scheduleTour)
+
 /** 快捷键：0 总览 · 1–5 模块 · 空格 暂停 · S 演练台；输入框内与弹窗打开时不响应 */
 function onKey(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
   if (e.ctrlKey || e.metaKey || e.altKey) return
-  if (document.querySelector('#ak-overlay .ak-modal-mask')) return
+  if (document.querySelector(USER_MODAL)) return
   if (e.key === '0') ui.back()
   else if (e.key >= '1' && e.key <= '5') ui.navigate(MODULE_ORDER[Number(e.key) - 1])
   else if (e.key === ' ') {
     e.preventDefault()
     plant.togglePause()
   } else if (e.key.toLowerCase() === 's') ui.toggleConsole()
+  else if (e.key.toLowerCase() === 't') ui.toggleTour()
 }
 
 onMounted(() => {
@@ -66,6 +88,7 @@ onBeforeUnmount(() => {
   observer?.disconnect()
   observer = null
   window.removeEventListener('keydown', onKey)
+  if (tourTimer !== null) window.clearInterval(tourTimer)
 })
 </script>
 

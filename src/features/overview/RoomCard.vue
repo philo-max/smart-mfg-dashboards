@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Bell, ChevronRight } from '@lucide/vue'
 import SignalLight from '@/components/ui/SignalLight.vue'
+import { useCountUp } from '@/components/motion/useCountUp'
 import Sparkline from '@/components/ui/Sparkline.vue'
 import type { ModuleMeta } from '@/data/modules'
 import type { RoomSummary } from '@/data/sim/selectors'
@@ -12,6 +13,7 @@ const props = defineProps<{ meta: ModuleMeta; summary: RoomSummary; level: Level
 const emit = defineEmits<{ enter: [] }>()
 
 const light = computed(() => lightOf(props.level))
+const headline = useCountUp(() => props.summary.headline.value)
 const effTone = computed(() => (props.summary.efficiency < 75 ? 'is-warn' : ''))
 </script>
 
@@ -40,7 +42,7 @@ const effTone = computed(() => (props.summary.efficiency < 75 ? 'is-warn' : ''))
 
     <div class="room__headline">
       <span class="room__hl-label">{{ summary.headline.label }}</span>
-      <b class="ak-num">{{ summary.headline.value }}<small>{{ summary.headline.unit }}</small></b>
+      <b class="ak-num">{{ headline }}<small>{{ summary.headline.unit }}</small></b>
     </div>
 
     <dl class="room__secondary">

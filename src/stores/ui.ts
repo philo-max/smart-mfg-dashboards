@@ -16,6 +16,7 @@ export const useUiStore = defineStore('ui', () => {
   const consoleOpen = ref(false)
   const traceRfid = ref<string | null>(null)
   const causeAlarmId = ref<number | null>(null)
+  const tour = ref(false)
 
   const activeModule = computed(() => (view.value === 'overview' ? null : MODULES[view.value]))
 
@@ -48,6 +49,10 @@ export const useUiStore = defineStore('ui', () => {
     traceRfid.value = null
   }
 
+  function toggleTour() {
+    tour.value = !tour.value
+  }
+
   function openCause(alarmId: number) {
     causeAlarmId.value = alarmId
   }
@@ -57,7 +62,7 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   return {
-    view, focus, reducedMotion, consoleOpen, traceRfid, causeAlarmId, activeModule,
-    navigate, back, clearFocus, setReducedMotion, toggleConsole, openTrace, closeTrace, openCause, closeCause,
+    view, focus, reducedMotion, consoleOpen, traceRfid, causeAlarmId, tour, activeModule,
+    navigate, back, clearFocus, setReducedMotion, toggleConsole, toggleTour, openTrace, closeTrace, openCause, closeCause,
   }
 })

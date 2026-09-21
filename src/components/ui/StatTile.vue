@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useCountUp } from '@/components/motion/useCountUp'
 import type { Level } from '@/data/sim/types'
 
 const props = withDefaults(
@@ -7,6 +8,7 @@ const props = withDefaults(
   { unit: '', en: '', level: 'normal', hint: '', clickable: false },
 )
 const emit = defineEmits<{ activate: [] }>()
+const shown = useCountUp(() => props.value)
 
 const tone = computed(() => ({ normal: '', warn: 'tone-warn', risk: 'tone-risk' })[props.level])
 
@@ -29,7 +31,7 @@ function onKey(e: KeyboardEvent) {
     @keydown="onKey"
   >
     <span class="stat__label">{{ label }}<span v-if="en" class="ak-en stat__en">{{ en }}</span></span>
-    <span class="stat__value ak-num" :class="tone">{{ value }}<small v-if="unit">{{ unit }}</small></span>
+    <span class="stat__value ak-num" :class="tone">{{ shown }}<small v-if="unit">{{ unit }}</small></span>
     <span v-if="hint" class="stat__hint">{{ hint }}</span>
   </div>
 </template>

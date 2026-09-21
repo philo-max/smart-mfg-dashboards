@@ -66,6 +66,7 @@ function run(s: ScenarioDef) {
         <span><kbd>0</kbd> 总览</span>
         <span><kbd>空格</kbd> 暂停</span>
         <span><kbd>S</kbd> 本面板</span>
+        <span><kbd>T</kbd> 自动巡视</span>
       </footer>
     </aside>
   </Transition>

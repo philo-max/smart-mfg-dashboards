@@ -7,6 +7,7 @@ import HubCard from './HubCard.vue'
 import AgvCorridor from './AgvCorridor.vue'
 import AlarmCenter from './AlarmCenter.vue'
 import LinkagePanel from './LinkagePanel.vue'
+import FlowRibbon from './FlowRibbon.vue'
 import { MODULES, type ModuleId } from '@/data/modules'
 import { FPY_THRESHOLD, REWORK_THRESHOLD } from '@/data/sim/constants'
 import { usePlantStore } from '@/stores/plant'
@@ -35,6 +36,7 @@ const alarmCounts = computed(() => {
         <span class="ak-en">BASE LAYOUT · 物料流向 仓库 → 物流 → AGV → 装配 → 检测 → 物流出库</span>
         <span class="base__tip">点击房间进入模块</span>
       </header>
+      <FlowRibbon />
       <div class="base__rooms">
         <RoomCard
           v-for="id in LEFT"
@@ -86,7 +88,7 @@ const alarmCounts = computed(() => {
 
 .base {
   display: grid;
-  grid-template-rows: 40px minmax(0, 1fr) 236px;
+  grid-template-rows: 40px 56px minmax(0, 1fr) 236px;
   gap: 14px;
   min-height: 0;
 }

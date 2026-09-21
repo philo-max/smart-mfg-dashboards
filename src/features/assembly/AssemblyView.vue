@@ -168,7 +168,7 @@ const taktOption = computed<EChartsOption>(() => ({
       <PointsPanel unit="assembly" :color="meta.color" />
     </div>
 
-    <AkModal v-model:open="alertOpen" title="返工率超标告警" en="REWORK ALERT" :width="640" :height="330" color="var(--signal-risk)">
+    <AkModal v-model:open="alertOpen" alert title="返工率超标告警" en="REWORK ALERT" :width="640" :height="330" color="var(--signal-risk)">
       <div class="alert">
         <TriangleAlert :size="46" class="tone-risk" />
         <div>
