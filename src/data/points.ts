@@ -100,7 +100,7 @@ function valuesFor(state: PlantState, unit: ModuleId): Record<string, string | n
         ZhuangPei_Reachsignal: reach('R1'), JianCe_Reachsignal: reach('R2'),
         WuLiu_Reachsignal: reach('R3'), ChongDian_Reachsignal: moma.status === 'charging',
         Alarm_AGV: state.agv.agvs.some((a) => a.status === 'blocked') ? 1 : 0,
-        Alarm_Lowbattery: state.agv.agvs.some((a) => a.battery < 25) ? 1 : 0,
+        Alarm_Lowbattery: state.agv.agvs.some((a) => a.battery < 20) ? 1 : 0,
       }
     case 'assembly':
       return {

@@ -9,7 +9,9 @@ import type { AlarmDraft, Agv, PlantState } from './types'
 const AGV_BLOCK_CHANCE = 0.01
 const AGV_BATTERY_DRAIN = 0.5
 const AGV_CHARGE_RATE = 5
-const AGV_LOW_BATTERY = 25
+const AGV_LOW_BATTERY = 20
+/** 回库时电量低于此值则插入充电往返，保证下一轮作业电量充足 */
+const AGV_CHARGE_DECISION = 40
 const AGV_FULL_BATTERY = 90
 const INBOUND_CHANCE = 0.35
 /** 演示时间压缩：每 tick 库存停留 +0.5 分钟 */
@@ -61,7 +63,7 @@ function completeLeg(agv: Agv, rng: Rng, state: PlantState, result: AgvStepResul
       break
     case 'R3':
       result.ordersCompleted += 1
-      assign(agv, agv.battery < AGV_LOW_BATTERY ? 'R4' : 'R1', rng, state, result)
+      assign(agv, agv.battery < AGV_CHARGE_DECISION ? 'R4' : 'R1', rng, state, result)
       break
     case 'R4':
       agv.status = 'charging'

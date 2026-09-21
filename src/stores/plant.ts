@@ -9,7 +9,7 @@ import type { AlarmDraft, AlarmStatus, PlantAlarm, PlantState } from '@/data/sim
 
 const SEED = 20260921
 /** 预热 tick 数：让检测记录、告警等在首屏就有内容 */
-const WARMUP_TICKS = 40
+const WARMUP_TICKS = 150
 
 /**
  * 产线唯一数据源：五个单元共用同一份模拟状态，按物料流向逐 tick 联动推进。

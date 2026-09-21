@@ -8,7 +8,7 @@ import { reworkRate } from './step-quality'
 import type { Equipment, Level, Light, PlantState } from './types'
 
 const ON_TIME_TARGET = 95
-const LOW_BATTERY = 25
+const LOW_BATTERY = 20
 
 export function oeeOf(eq: Equipment): number {
   return round(eq.availability * eq.performance * eq.quality * 100, 1)
@@ -98,11 +98,21 @@ export interface RoomSlot {
   level: Level
 }
 
+export interface RoomSpark {
+  label: string
+  kind: 'line' | 'bar'
+  values: number[]
+  threshold: number
+  /** 超过阈值为异常（true）还是低于阈值为异常（false） */
+  highIsBad: boolean
+}
+
 export interface RoomSummary {
   headline: { label: string; value: string; unit: string }
   secondary: { label: string; value: string }[]
   efficiency: number
   slots: RoomSlot[]
+  spark: RoomSpark
 }
 
 export function roomSummaries(state: PlantState): Record<ModuleId, RoomSummary> {
@@ -119,18 +129,21 @@ export function roomSummaries(state: PlantState): Record<ModuleId, RoomSummary> 
       secondary: [{ label: '在库', value: `${k.inventory}/12` }, { label: '呆滞', value: String(wh.cells.filter((c) => c.dwellMin >= DWELL_HOT_MIN).length) }],
       efficiency: eff('warehouse'),
       slots: wh.cells.slice(0, 4).map((c) => ({ id: c.id, label: c.material ?? '空', level: c.dwellMin >= DWELL_HOT_MIN ? 'warn' : 'normal' })),
+      spark: { label: '12 工位停留时长 (min)', kind: 'bar', values: wh.cells.map((c) => c.dwellMin), threshold: DWELL_HOT_MIN, highIsBad: true },
     },
     agv: {
       headline: { label: '任务完成率', value: k.agvCompletion.toFixed(1), unit: '%' },
       secondary: [{ label: '运行', value: String(state.agv.agvs.filter((a) => a.status === 'running').length) }, { label: '阻塞', value: String(state.agv.agvs.filter((a) => a.status === 'blocked').length) }],
       efficiency: eff('agv'),
       slots: state.agv.agvs.map((a) => ({ id: a.id, label: a.id.slice(-2), level: a.status === 'blocked' ? 'risk' : a.status === 'charging' ? 'warn' : 'normal' })),
+      spark: { label: 'MOMA 电量 (%)', kind: 'bar', values: state.agv.agvs.map((a) => a.battery), threshold: LOW_BATTERY, highIsBad: false },
     },
     assembly: {
       headline: { label: '装配合格率', value: ((asm.qualified / asm.produced) * 100).toFixed(2), unit: '%' },
       secondary: [{ label: '节拍', value: `${asm.lastTakt}s` }, { label: '返工率', value: `${k.rework}%` }],
       efficiency: eff('assembly'),
       slots: asm.workers.slice(0, 4).map((w) => ({ id: w.name, label: w.name.slice(0, 1), level: k.rework > REWORK_THRESHOLD ? 'risk' : 'normal' })),
+      spark: { label: '近 20 个节拍 (s)', kind: 'line', values: asm.taktHistory, threshold: TAKT_TARGET, highIsBad: true },
     },
     inspection: {
       headline: { label: '一次合格率', value: ins.fpy.toFixed(2), unit: '%' },
@@ -140,12 +153,17 @@ export function roomSummaries(state: PlantState): Record<ModuleId, RoomSummary> 
         id: s.name, label: String(i + 1),
         level: state.inspection.records.slice(0, 5).some((r) => !r.positions[i]) ? 'warn' : 'normal',
       })),
+      spark: {
+        label: '24h 每小时 FPY (%)', kind: 'line', threshold: FPY_THRESHOLD, highIsBad: false,
+        values: state.inspection.hourly.map((h) => (h.pass + h.fail ? round((h.pass / (h.pass + h.fail)) * 100, 2) : 100)),
+      },
     },
     logistics: {
       headline: { label: '订单准时交付率', value: k.onTime.toFixed(1), unit: '%' },
       secondary: [{ label: '运输', value: `${last.seconds}s` }, { label: '订单', value: String(lg.ordersTotal) }],
       efficiency: eff('logistics'),
       slots: lg.equipment.map((e) => ({ id: e.id, label: e.id.slice(-2), level: oeeOf(e) < OEE_WARN ? 'warn' : 'normal' })),
+      spark: { label: '物料运输耗时 (s)', kind: 'line', values: lg.transport.map((t) => t.seconds), threshold: TRANSPORT_LATE_S, highIsBad: true },
     },
   }
 }
