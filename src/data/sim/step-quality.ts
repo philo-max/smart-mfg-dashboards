@@ -1,8 +1,9 @@
 import { type Rng, clockText, round } from './rng'
 import {
   DEFECT_TYPES, INSPECTION_STATIONS, NOMINAL, RECENT_WINDOW, REWORK_THRESHOLD,
-  TAKT_TARGET, TICK_SECONDS, TOLERANCE, TOLERANCE_SD,
+  HISTORY_LEN, TAKE_TIME_S, TAKT_TARGET, TICK_SECONDS, TOLERANCE, TOLERANCE_SD, TORQUE_MAX, TORQUE_MIN,
 } from './constants'
+import { torqueCurve, torquePeak } from './torque'
 import { nextRfid } from './init'
 import { canAlarm } from './step-flow'
 import type { AlarmDraft, InspectionRecord, PlantState } from './types'
@@ -43,6 +44,14 @@ export function stepAssembly(state: PlantState, rng: Rng, delivered: number, blo
     asm.taktElapsed = 0
     asm.nextCycle = Math.max(TICK_SECONDS * 7, Math.round(rng.gaussian(TAKT_TARGET - 2, 1) / TICK_SECONDS) * TICK_SECONDS)
     asm.currentRfid = nextRfid()
+    asm.torque = torqueCurve(rng, asm.driftTicks > 0)
+    const peak = torquePeak(asm.torque)
+    if ((peak > TORQUE_MAX || peak < TORQUE_MIN) && canAlarm(state, 'torque', 10)) {
+      result.alarms.push({
+        module: 'assembly', level: 'warn', category: '生产超差',
+        text: `拧紧扭矩峰值 ${peak.toFixed(2)} N·m 超出 ${TORQUE_MIN}–${TORQUE_MAX} N·m 工艺窗口`,
+      })
+    }
   }
   if (asm.taktElapsed >= TAKT_TARGET + TAKT_OVERRUN_ALARM_S && canAlarm(state, 'takt', 20)) {
     result.alarms.push({ module: 'assembly', level: 'warn', category: '生产超差', text: `装配节拍 ${asm.taktElapsed}s 超出目标 ${TAKT_TARGET}s，工位缺料等待` })
@@ -108,13 +117,16 @@ export function stepInspection(state: PlantState, rng: Rng, units: number, now: 
     ins.records.unshift(rec)
   }
   if (ins.records.length > MAX_RECORDS) ins.records.length = MAX_RECORDS
+  if (units > 0) ins.takeTime = round(rng.gaussian(TAKE_TIME_S, 0.5), 1)
 
   const recentFails = ins.records.slice(0, INSPECTION_ALARM_WINDOW).filter((r) => !r.pass).length
   if (result.fails > 0 && recentFails >= INSPECTION_ALARM_FAILS && canAlarm(state, 'inspection', 15)) {
     result.alarms.push({ module: 'inspection', level: 'warn', category: '质量异常', text: `连续不合格：近 ${INSPECTION_ALARM_WINDOW} 件中 ${recentFails} 件 NG` })
   }
   const rate = reworkRate(state)
-  if (rate > REWORK_THRESHOLD && canAlarm(state, 'rework', 20)) {
+  asm.reworkHistory.push(rate)
+  if (asm.reworkHistory.length > HISTORY_LEN) asm.reworkHistory.shift()
+  if (rate > REWORK_THRESHOLD && canAlarm(state, 'rework', 60)) {
     result.alarms.push({ module: 'assembly', level: 'risk', category: '质量异常', text: `装配返工率 ${rate}% 超过 ${REWORK_THRESHOLD}% 标准，请排查装配机器人` })
   }
   return result

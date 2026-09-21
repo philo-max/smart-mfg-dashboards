@@ -2,6 +2,7 @@
 .module {
   display: grid;
   grid-template-columns: 420px minmax(0, 1fr) 420px;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 16px;
   min-height: 0;
   width: 100%;
@@ -17,6 +18,11 @@
 .col--center {
   grid-template-rows: minmax(0, 1fr) 300px;
 }
+
+/* 行模板：每个模块按面板数量选用 */
+.rows-a { grid-template-rows: 300px minmax(0, 1fr) minmax(0, 1fr); }
+.rows-b { grid-template-rows: minmax(0, 1fr) 210px 260px; }
+.rows-c { grid-template-rows: 200px minmax(0, 1fr) 250px; }
 
 .grid3 {
   display: grid;

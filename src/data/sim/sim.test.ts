@@ -4,7 +4,8 @@ import { createPlant } from './init'
 import { stepPlant } from './step'
 import { canAlarm, stepAgv, stepLogistics, stepWarehouse } from './step-flow'
 import { reworkRate, stepAssembly, stepInspection } from './step-quality'
-import { DWELL_HOT_MIN, REWORK_THRESHOLD, TAKT_TARGET, TRANSPORT_LATE_S } from './constants'
+import { DWELL_HOT_MIN, REWORK_THRESHOLD, TAKT_TARGET, TORQUE_MAX, TORQUE_MIN, TRANSPORT_LATE_S } from './constants'
+import { torqueCurve, torquePeak } from './torque'
 import { moduleLevels } from './selectors'
 
 const NOW = new Date('2026-09-21T10:30:00')
@@ -65,7 +66,7 @@ describe('联动链 1：AGV 阻塞 → 装配缺料', () => {
     const { rng, state } = fresh()
     const onTime = state.logistics.ordersOnTime
     const total = state.logistics.ordersTotal
-    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 0, warehousePicks: 0, ordersCompleted: 1, transportSamples: [TRANSPORT_LATE_S + 10] }, NOW)
+    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 0, warehousePicks: 0, ordersCompleted: 1, transportSamples: [TRANSPORT_LATE_S + 10], legs: ['R3'] }, NOW)
     expect(state.logistics.ordersTotal).toBe(total + 1)
     expect(state.logistics.ordersOnTime).toBe(onTime)
   })
@@ -141,5 +142,40 @@ describe('stepPlant', () => {
     expect(state.agv.tasksDone).toBeLessThanOrEqual(state.agv.tasksTotal)
     expect(drafts.length).toBeGreaterThan(0)
     expect(drafts.every((d) => d.category && d.module)).toBe(true)
+  })
+})
+
+describe('扭矩曲线', () => {
+  it('正常工况峰值落在 0.8–1.2 N·m 工艺窗口内，漂移时越界', () => {
+    const rng = createRng(3)
+    const normal = Array.from({ length: 50 }, () => torquePeak(torqueCurve(rng, false)))
+    const drift = Array.from({ length: 50 }, () => torquePeak(torqueCurve(rng, true)))
+    expect(normal.filter((p) => p >= TORQUE_MIN && p <= TORQUE_MAX).length).toBeGreaterThan(45)
+    expect(drift.filter((p) => p < TORQUE_MIN || p > TORQUE_MAX).length).toBeGreaterThan(45)
+  })
+})
+
+describe('新增历史序列', () => {
+  it('仓库流量、AGV 历史、返工历史、订单小时桶与追踪表都有上限', () => {
+    const { rng, state } = fresh(11)
+    for (let i = 0; i < 400; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
+    expect(state.warehouse.flow).toHaveLength(30)
+    expect(state.agv.history).toHaveLength(30)
+    expect(state.assembly.reworkHistory).toHaveLength(30)
+    expect(state.logistics.trace.length).toBeLessThanOrEqual(14)
+    expect(state.logistics.orderHourly.length).toBeLessThanOrEqual(24)
+    expect(state.logistics.trace.length).toBeGreaterThan(0)
+  })
+
+  it('订单小时桶合计不超过订单总数增量，且准时数不大于总数', () => {
+    const { rng, state } = fresh(5)
+    for (let i = 0; i < 300; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
+    for (const b of state.logistics.orderHourly) expect(b.onTime).toBeLessThanOrEqual(b.total)
+  })
+
+  it('延误的 R1 送料在追踪表中标记为延误', () => {
+    const { rng, state } = fresh()
+    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 1, warehousePicks: 0, ordersCompleted: 0, transportSamples: [TRANSPORT_LATE_S + 6], legs: ['R1'] }, NOW)
+    expect(state.logistics.trace[0].status).toBe('延误')
   })
 })

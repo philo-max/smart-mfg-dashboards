@@ -167,3 +167,84 @@ export function roomSummaries(state: PlantState): Record<ModuleId, RoomSummary> 
     },
   }
 }
+
+export interface LinkNode {
+  module: ModuleId
+  label: string
+  value: string
+  level: Level
+}
+
+export interface Linkage {
+  up: LinkNode
+  down: LinkNode
+}
+
+/** 每个模块在物料流中的上下游：仓库 ← 物流订单，→ AGV；AGV → 装配 → 检测 → 物流出库 */
+export function moduleLinkage(state: PlantState, module: ModuleId): Linkage {
+  const levels = moduleLevels(state)
+  const k = plantKpis(state)
+  const blocked = state.agv.agvs.filter((a) => a.status === 'blocked').length
+  const lastTransport = state.logistics.transport[state.logistics.transport.length - 1]
+  const ins = inspectionTotals(state)
+  const node = (m: ModuleId, label: string, value: string): LinkNode => ({ module: m, label, value, level: levels[m] })
+  switch (module) {
+    case 'warehouse':
+      return {
+        up: node('logistics', '订单拉料', `${state.logistics.ordersTotal} 单`),
+        down: node('agv', '出库取料', `${state.warehouse.outboundToday} 件`),
+      }
+    case 'logistics':
+      return {
+        up: node('warehouse', '出库物料', `在库 ${k.inventory}/12`),
+        down: node('agv', '配送运输', `${lastTransport.seconds}s`),
+      }
+    case 'agv':
+      return {
+        up: node('logistics', '待配送', `${state.logistics.ordersTotal} 单`),
+        down: node('assembly', '送料状态', blocked > 0 ? `${blocked} 台阻塞 · 缺料风险` : '供料正常'),
+      }
+    case 'assembly':
+      return {
+        up: node('agv', '物料送达', blocked > 0 ? `${blocked} 台阻塞` : '供料正常'),
+        down: node('inspection', '送检 / 回流返工', `返工率 ${k.rework}%`),
+      }
+    case 'inspection':
+      return {
+        up: node('assembly', '装配来料', state.assembly.driftTicks > 0 ? '质量漂移中' : '工艺稳定'),
+        down: node('logistics', '合格品出库', `${ins.pass} 件`),
+      }
+  }
+}
+
+export function faultCounts(equipment: Equipment, catalog: readonly { code: string; desc: string }[]) {
+  return catalog.map((c) => ({ ...c, count: equipment.faults.filter((f) => f.code === c.code).length }))
+}
+
+/** 设备 24h 状态时长分布（小时）：运行 / 待机 / 故障 */
+export function statusHours(eq: Equipment) {
+  const total = 24
+  const fault = round(total * (1 - eq.availability), 1)
+  const running = round(total * eq.availability * eq.performance, 1)
+  return { running, idle: round(total - fault - running, 1), fault }
+}
+
+const RECENT_TRANSPORT = 10
+
+/** AGV 任务响应率：近 30 tick 内车队未被阻塞的占比 */
+export function agvResponseRate(state: PlantState): number {
+  const h = state.agv.history
+  const blocked = h.reduce((a, x) => a + x.blocked, 0)
+  return round((1 - blocked / (h.length * state.agv.agvs.length)) * 100, 1)
+}
+
+export function avgTransportSeconds(state: PlantState): number {
+  const t = state.logistics.transport.slice(-RECENT_TRANSPORT)
+  return Math.round(t.reduce((a, x) => a + x.seconds, 0) / t.length)
+}
+
+/** 库内平均仓储时间（分钟） */
+export function avgStorageMinutes(state: PlantState): number {
+  const stored = state.warehouse.cells.filter((c) => c.item)
+  return stored.length ? round(stored.reduce((a, c) => a + c.dwellMin, 0) / stored.length, 1) : 0
+}

@@ -5,6 +5,9 @@ import type { AgvRoute, Point } from './types'
 export const TICK_MS = 2000
 export const TICK_SECONDS = TICK_MS / 1000
 export const MAX_ALARMS = 60
+/** 瞬时告警自动恢复：预警 45 tick（90s），紧急 90 tick（3min）；人工已处理的不受影响 */
+export const AUTO_RESOLVE_WARN_TICKS = 45
+export const AUTO_RESOLVE_RISK_TICKS = 90
 
 export const FPY_THRESHOLD = 98
 export const REWORK_THRESHOLD = 1.5
@@ -13,6 +16,12 @@ export const DWELL_HOT_MIN = 120
 export const TAKT_TARGET = 20
 export const TRANSPORT_LATE_S = 40
 export const RECENT_WINDOW = 200
+export const TORQUE_MIN = 0.8
+export const TORQUE_MAX = 1.2
+export const TORQUE_POINTS = 30
+export const TAKE_TIME_S = 7.2
+export const HISTORY_LEN = 30
+export const TRACE_MAX = 14
 
 /** 检测位2：后盖螺丝孔孔径 Φ2.50 ± 0.03 mm */
 export const NOMINAL = 2.5
@@ -81,8 +90,10 @@ export const FAULT_CATALOG: Record<string, readonly { code: string; desc: string
     { code: 'Alarm_ItemsSensor', desc: '物料感应故障' }, { code: 'Alarm_Servo', desc: '伺服故障' },
   ],
   'EQ-CK': [
-    { code: 'Alarm_Storage', desc: '仓库故障' }, { code: 'Alarm_Servo', desc: '伺服故障' },
-    { code: 'Alarm_RFID', desc: 'RFID故障' }, { code: 'Alarm_Pressure', desc: '气压故障' },
+    { code: 'Alarm_Transport', desc: '传输故障' }, { code: 'Alarm_Storage', desc: '仓库故障' },
+    { code: 'Alarm_Servo', desc: '伺服故障' }, { code: 'Alarm_RFID', desc: 'RFID故障' },
+    { code: 'Alarm_Print', desc: '打印故障' }, { code: 'Alarm_Pressure', desc: '气压故障' },
+    { code: 'Alarm_ItemsSensor', desc: '物料感应故障' }, { code: 'Alarm_EmergencyStop', desc: '急停' },
   ],
   'EQ-MM': [
     { code: 'Alarm_AGV', desc: 'AGV故障' }, { code: 'Alarm_Yaxis', desc: 'Y轴故障' },

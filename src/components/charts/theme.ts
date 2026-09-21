@@ -138,3 +138,25 @@ export function gauge(value: number, name: string, min = 0, max = 100) {
     ],
   }
 }
+
+/** 迷你仪表盘（设备 OEE 排行行） */
+export function miniGauge(value: number, name: string) {
+  return {
+    series: [
+      {
+        type: 'gauge' as const,
+        min: 0, max: 100, splitNumber: 4, radius: '98%', center: ['50%', '62%'],
+        startAngle: 210, endAngle: -30,
+        axisLine: { lineStyle: { width: 8, color: [[0.6, C.risk], [0.75, C.warn], [1, C.pos]] as [number, string][] } },
+        pointer: { width: 3, length: '58%', itemStyle: { color: C.accent } },
+        axisTick: { show: false },
+        splitLine: { distance: -8, length: 8, lineStyle: { color: '#fff', width: 1 } },
+        axisLabel: { show: false },
+        anchor: { show: true, size: 7, itemStyle: { color: C.accent } },
+        title: { show: false },
+        detail: { valueAnimation: true, offsetCenter: [0, '58%'], formatter: '{value}%', color: C.highlight, fontSize: 18, fontWeight: 700, fontFamily: 'Bahnschrift, sans-serif' },
+        data: [{ value, name }],
+      },
+    ],
+  }
+}

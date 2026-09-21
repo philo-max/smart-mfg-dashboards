@@ -3,13 +3,14 @@ import { defineStore } from 'pinia'
 import { createRng, clockText } from '@/data/sim/rng'
 import { createPlant } from '@/data/sim/init'
 import { stepPlant } from '@/data/sim/step'
-import { MAX_ALARMS, TICK_MS } from '@/data/sim/constants'
+import { AUTO_RESOLVE_RISK_TICKS, AUTO_RESOLVE_WARN_TICKS, MAX_ALARMS, TICK_MS } from '@/data/sim/constants'
 import { moduleLevels, plantKpis, roomSummaries } from '@/data/sim/selectors'
 import type { AlarmDraft, AlarmStatus, PlantAlarm, PlantState } from '@/data/sim/types'
 
 const SEED = 20260921
 /** 预热 tick 数：让检测记录、告警等在首屏就有内容 */
 const WARMUP_TICKS = 150
+const WARMUP_OPEN_ALARMS = 4
 
 /**
  * 产线唯一数据源：五个单元共用同一份模拟状态，按物料流向逐 tick 联动推进。
@@ -25,14 +26,22 @@ export const usePlantStore = defineStore('plant', () => {
 
   function pushAlarms(drafts: AlarmDraft[], now: Date) {
     if (drafts.length === 0) return
-    const created = drafts.map((d) => ({ ...d, id: ++seq, time: clockText(now), status: 'open' as AlarmStatus }))
+    const created = drafts.map((d) => ({ ...d, id: ++seq, time: clockText(now), tick: state.tick, status: 'open' as AlarmStatus }))
     alarms.value = [...created.reverse(), ...alarms.value].slice(0, MAX_ALARMS)
     latestAlarm.value = created.find((a) => a.level === 'risk') ?? created[0]
+  }
+
+  function autoResolve() {
+    const stale = (a: PlantAlarm) =>
+      a.status !== 'resolved' && state.tick - a.tick > (a.level === 'risk' ? AUTO_RESOLVE_RISK_TICKS : AUTO_RESOLVE_WARN_TICKS)
+    if (!alarms.value.some(stale)) return
+    alarms.value = alarms.value.map((a) => (stale(a) ? { ...a, status: 'resolved' as AlarmStatus } : a))
   }
 
   function tick() {
     const now = new Date()
     pushAlarms(stepPlant(state, rng, now), now)
+    autoResolve()
   }
 
   for (let i = 0; i < WARMUP_TICKS; i++) {
@@ -40,6 +49,8 @@ export const usePlantStore = defineStore('plant', () => {
     pushAlarms(stepPlant(state, rng, now), now)
   }
   latestAlarm.value = null
+  /** 预热期间产生的是「历史告警」：只保留最近几条为未处理，其余视为已解决 */
+  alarms.value = alarms.value.map((a, i) => (i < WARMUP_OPEN_ALARMS ? a : { ...a, status: 'resolved' as AlarmStatus }))
 
   function start() {
     if (timer !== null) return

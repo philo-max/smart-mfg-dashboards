@@ -38,6 +38,8 @@ export interface WarehouseState {
   robot: { x: number; y: number; z: number }
   upperBelt: boolean
   lowerBelt: boolean
+  /** 最近 30 个 tick 的入库/出库件数 */
+  flow: { in: number; out: number }[]
 }
 
 export type AgvStatus = 'running' | 'idle' | 'charging' | 'blocked'
@@ -69,6 +71,8 @@ export interface AgvState {
   agvs: Agv[]
   tasksDone: number
   tasksTotal: number
+  /** 最近 30 个 tick 的完成任务数与阻塞台数 */
+  history: { done: number; blocked: number }[]
 }
 
 export interface AssemblyWorker {
@@ -91,6 +95,10 @@ export interface AssemblyState {
   /** 最近若干件的返工标记（1=返工），用于滚动返工率 */
   recent: number[]
   currentRfid: string
+  /** 最近一次拧紧的扭矩-时间曲线（N·m） */
+  torque: number[]
+  /** 最近 30 个 tick 的滚动返工率（%） */
+  reworkHistory: number[]
 }
 
 export interface HourBucket {
@@ -132,6 +140,8 @@ export interface InspectionState {
   stations: InspectionStation[]
   records: InspectionRecord[]
   mttr: MttrAlarm[]
+  /** 单件检测耗时（s） */
+  takeTime: number
 }
 
 export interface FaultRecord {
@@ -151,12 +161,29 @@ export interface Equipment {
   faults: FaultRecord[]
 }
 
+export interface TraceRecord {
+  time: string
+  rfid: string
+  name: string
+  from: string
+  to: string
+  status: '完成' | '延误'
+}
+
+export interface OrderBucket {
+  label: string
+  total: number
+  onTime: number
+}
+
 export interface LogisticsState {
   ordersTotal: number
   ordersOnTime: number
   rfidWrites: number
   transport: { label: string; seconds: number }[]
   equipment: Equipment[]
+  trace: TraceRecord[]
+  orderHourly: OrderBucket[]
 }
 
 export type AlarmCategory = '设备故障' | '质量异常' | '生产超差' | '物流异常'
@@ -170,6 +197,8 @@ export interface PlantAlarm {
   status: AlarmStatus
   text: string
   time: string
+  /** 产生时的 tick，用于自动恢复 */
+  tick: number
   focus?: string
 }
 
@@ -183,4 +212,4 @@ export interface PlantState {
   cooldowns: Record<string, number>
 }
 
-export type AlarmDraft = Omit<PlantAlarm, 'id' | 'time' | 'status'>
+export type AlarmDraft = Omit<PlantAlarm, 'id' | 'time' | 'status' | 'tick'>

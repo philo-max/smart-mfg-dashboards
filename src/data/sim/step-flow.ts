@@ -1,9 +1,9 @@
 import { type Rng, clockText, round } from './rng'
 import {
   AGV_ROUTES, DRIFT_EQUIPMENT, DWELL_HOT_MIN, FAULT_CATALOG, MATERIAL_TYPES,
-  TICK_SECONDS, TRANSPORT_LATE_S, WORK_ROUTES,
+  HISTORY_LEN, TICK_SECONDS, TRACE_MAX, TRANSPORT_LATE_S, WORKPIECE_NAMES, WORK_ROUTES,
 } from './constants'
-import { makeWorkpiece, taskName } from './init'
+import { makeWorkpiece, nextRfid, taskName } from './init'
 import type { AlarmDraft, Agv, PlantState } from './types'
 
 const AGV_BLOCK_CHANCE = 0.01
@@ -21,6 +21,7 @@ const FAULT_AVAILABILITY_DROP = 0.08
 const AVAILABILITY_RECOVERY = 0.003
 const AVAILABILITY_CEIL = 0.95
 const TRANSPORT_WINDOW = 30
+const FAULT_LOG_MAX = 40
 
 export function canAlarm(state: PlantState, key: string, cooldownTicks: number): boolean {
   const until = state.cooldowns[key] ?? -1
@@ -35,6 +36,8 @@ export interface AgvStepResult {
   warehousePicks: number
   ordersCompleted: number
   transportSamples: number[]
+  /** 本 tick 完成的路段（路径 ID），供物流追踪表使用 */
+  legs: string[]
 }
 
 function routeName(id: string): string {
@@ -51,6 +54,7 @@ function assign(agv: Agv, routeId: string, rng: Rng, state: PlantState, result: 
 }
 
 function completeLeg(agv: Agv, rng: Rng, state: PlantState, result: AgvStepResult) {
+  result.legs.push(agv.routeId)
   if ((WORK_ROUTES as readonly string[]).includes(agv.routeId)) state.agv.tasksDone += 1
   switch (agv.routeId) {
     case 'R1':
@@ -76,7 +80,7 @@ function completeLeg(agv: Agv, rng: Rng, state: PlantState, result: AgvStepResul
 }
 
 export function stepAgv(state: PlantState, rng: Rng): AgvStepResult {
-  const result: AgvStepResult = { alarms: [], deliveredToAssembly: 0, warehousePicks: 0, ordersCompleted: 0, transportSamples: [] }
+  const result: AgvStepResult = { alarms: [], deliveredToAssembly: 0, warehousePicks: 0, ordersCompleted: 0, transportSamples: [], legs: [] }
   for (const agv of state.agv.agvs) {
     if (agv.status === 'charging') {
       agv.battery = Math.min(100, agv.battery + AGV_CHARGE_RATE)
@@ -109,6 +113,9 @@ export function stepAgv(state: PlantState, rng: Rng): AgvStepResult {
     agv.progress += agv.speed
     if (agv.progress >= 1) completeLeg(agv, rng, state, result)
   }
+  const workLegs = result.legs.filter((id) => (WORK_ROUTES as readonly string[]).includes(id)).length
+  state.agv.history.push({ done: workLegs, blocked: state.agv.agvs.filter((a) => a.status === 'blocked').length })
+  if (state.agv.history.length > HISTORY_LEN) state.agv.history.shift()
   return result
 }
 
@@ -123,6 +130,8 @@ export function stepWarehouse(state: PlantState, rng: Rng, picks: number, now: D
       alarms.push({ module: 'warehouse', level: 'warn', category: '生产超差', focus: cell.id, text: `${cell.id}工位 ${cell.material} 料停留 ${DWELL_HOT_MIN} 分钟，形成呆滞` })
     }
   }
+  let inCount = 0
+  let outCount = 0
   const empties = wh.cells.filter((c) => !c.item)
   if (empties.length > 0 && rng.chance(INBOUND_CHANCE)) {
     const cell = rng.pick(empties)
@@ -131,6 +140,7 @@ export function stepWarehouse(state: PlantState, rng: Rng, picks: number, now: D
     cell.dwellMin = 0
     wh.inboundToday += 1
     wh.autoStore += 1
+    inCount += 1
     wh.robot = { x: 60 + cell.col * 80, y: 40 + cell.row * 60, z: rng.int(10, 60) }
   }
   for (let i = 0; i < picks; i++) {
@@ -142,8 +152,11 @@ export function stepWarehouse(state: PlantState, rng: Rng, picks: number, now: D
     cell.dwellMin = 0
     wh.outboundToday += 1
     wh.autoPick += 1
+    outCount += 1
     wh.robot = { x: 60 + cell.col * 80, y: 40 + cell.row * 60, z: rng.int(10, 60) }
   }
+  wh.flow.push({ in: inCount, out: outCount })
+  if (wh.flow.length > HISTORY_LEN) wh.flow.shift()
   wh.accuracy = round(Math.min(99.95, Math.max(98.6, wh.accuracy + rng.gaussian(0, 0.04))), 2)
   return alarms
 }
@@ -164,11 +177,24 @@ export function stepLogistics(state: PlantState, rng: Rng, agv: AgvStepResult, n
       result.alarms.push({ module: 'logistics', level: 'warn', category: '物流异常', text: `物料运输耗时 ${seconds}s，超过 ${TRANSPORT_LATE_S}s 交付红线` })
     }
   }
+  const bucket = lg.orderHourly[lg.orderHourly.length - 1]
   for (let i = 0; i < agv.ordersCompleted; i++) {
     lg.ordersTotal += 1
+    bucket.total += 1
     const last = lg.transport[lg.transport.length - 1]
-    if (last.seconds <= TRANSPORT_LATE_S) lg.ordersOnTime += 1
+    if (last.seconds <= TRANSPORT_LATE_S) {
+      lg.ordersOnTime += 1
+      bucket.onTime += 1
+    }
   }
+  let sampleIdx = 0
+  for (const routeId of agv.legs) {
+    const route = AGV_ROUTES.find((r) => r.id === routeId)
+    if (!route || !(WORK_ROUTES as readonly string[]).includes(routeId)) continue
+    const late = routeId === 'R1' && (agv.transportSamples[sampleIdx++] ?? 0) > TRANSPORT_LATE_S
+    lg.trace.unshift({ time: clockText(now), rfid: nextRfid(), name: rng.pick(WORKPIECE_NAMES), from: route.from, to: route.to, status: late ? '延误' : '完成' })
+  }
+  if (lg.trace.length > TRACE_MAX) lg.trace.length = TRACE_MAX
   for (const eq of lg.equipment) {
     eq.availability = round(Math.min(AVAILABILITY_CEIL, eq.availability + AVAILABILITY_RECOVERY), 3)
     eq.performance = round(Math.min(0.98, Math.max(0.75, eq.performance + rng.gaussian(0, 0.004))), 3)
@@ -178,6 +204,7 @@ export function stepLogistics(state: PlantState, rng: Rng, agv: AgvStepResult, n
     const fault = rng.pick(FAULT_CATALOG[eq.id])
     eq.availability = round(Math.max(0.4, eq.availability - FAULT_AVAILABILITY_DROP), 3)
     eq.faults.unshift({ time: clockText(now), code: fault.code, desc: fault.desc, minutes: rng.int(5, 30) })
+    if (eq.faults.length > FAULT_LOG_MAX) eq.faults.length = FAULT_LOG_MAX
     result.driftTriggered = DRIFT_EQUIPMENT.includes(eq.id)
     if (eq.id === 'EQ-MM') {
       const running = state.agv.agvs.filter((a) => a.status === 'running')

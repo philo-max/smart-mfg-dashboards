@@ -1,12 +1,13 @@
 import { type Rng, clockText, pad2, round } from './rng'
 import {
   AGV_ROUTES, ASSEMBLY_WORKERS, DEFECT_TYPES, EQUIPMENT, FAULT_CATALOG, INSPECTION_STATIONS,
-  MATERIAL_TYPES, NOMINAL, RECENT_WINDOW, TAKT_TARGET, TOLERANCE_SD, WAREHOUSE_COLS, WAREHOUSE_ROWS,
-  WORKPIECE_NAMES,
+  HISTORY_LEN, MATERIAL_TYPES, NOMINAL, RECENT_WINDOW, TAKE_TIME_S, TAKT_TARGET, TOLERANCE_SD,
+  WAREHOUSE_COLS, WAREHOUSE_ROWS, WORKPIECE_NAMES,
 } from './constants'
+import { torqueCurve } from './torque'
 import type {
-  AgvState, AssemblyState, Equipment, HourBucket, InspectionState, LogisticsState,
-  PlantState, WarehouseCell, WarehouseState, WorkpieceRef,
+  AgvState, AssemblyState, Equipment, HourBucket, InspectionState, LogisticsState, OrderBucket,
+  PlantState, TraceRecord, WarehouseCell, WarehouseState, WorkpieceRef,
 } from './types'
 
 const HOURS = 24
@@ -48,6 +49,7 @@ function initWarehouse(rng: Rng, now: Date): WarehouseState {
     inboundToday: rng.int(140, 170), outboundToday: rng.int(130, 160),
     autoStore: rng.int(1200, 1300), autoPick: rng.int(1150, 1250), manualStore: rng.int(20, 40),
     robot: { x: 120, y: 80, z: 30 }, upperBelt: true, lowerBelt: true,
+    flow: Array.from({ length: HISTORY_LEN }, () => ({ in: rng.int(0, 1), out: rng.int(0, 1) })),
   }
 }
 
@@ -72,7 +74,8 @@ function initAgv(rng: Rng): AgvState {
       legTicks: 0,
     }
   })
-  return { agvs, tasksDone: rng.int(180, 200), tasksTotal: 208 }
+  const history = Array.from({ length: HISTORY_LEN }, () => ({ done: rng.int(0, 2), blocked: 0 }))
+  return { agvs, tasksDone: rng.int(180, 200), tasksTotal: 208, history }
 }
 
 function initAssembly(rng: Rng): AssemblyState {
@@ -92,6 +95,8 @@ function initAssembly(rng: Rng): AssemblyState {
     nextCycle: 18,
     recent: Array.from({ length: RECENT_WINDOW }, () => (rng.chance(0.006) ? 1 : 0)),
     currentRfid: nextRfid(),
+    torque: torqueCurve(rng, false),
+    reworkHistory: Array.from({ length: HISTORY_LEN }, () => Math.max(0, round(rng.gaussian(0.6, 0.15), 2))),
   }
 }
 
@@ -132,6 +137,7 @@ function initInspection(rng: Rng, now: Date): InspectionState {
       { time: '11:20', station: '检测位5', desc: 'Alarm_RFID 标签读取失败', minutes: 9 },
       { time: '14:05', station: '检测机器人', desc: 'Alarm_Pressure 气压不足', minutes: 21 },
     ],
+    takeTime: TAKE_TIME_S,
   }
 }
 
@@ -147,6 +153,25 @@ function initLogistics(rng: Rng, now: Date): LogisticsState {
     }).sort((a, b) => b.time.localeCompare(a.time)),
   }))
   const ordersTotal = rng.int(180, 200)
+  const orderHourly: OrderBucket[] = Array.from({ length: HOURS }, (_, i) => {
+    const total = rng.int(7, 9)
+    return {
+      label: `${pad2(new Date(now.getTime() - (HOURS - 1 - i) * 3600e3).getHours())}:00`,
+      total,
+      onTime: total - (rng.chance(0.25) ? 1 : 0),
+    }
+  })
+  const trace: TraceRecord[] = Array.from({ length: 8 }, (_, i) => {
+    const route = AGV_ROUTES[i % 3]
+    return {
+      time: clockText(new Date(now.getTime() - (i + 1) * 20e3)),
+      rfid: nextRfid(),
+      name: rng.pick(WORKPIECE_NAMES),
+      from: route.from,
+      to: route.to,
+      status: '完成' as const,
+    }
+  })
   return {
     ordersTotal,
     ordersOnTime: Math.round(ordersTotal * 0.965),
@@ -156,6 +181,8 @@ function initLogistics(rng: Rng, now: Date): LogisticsState {
       seconds: Math.round(rng.gaussian(25, 3)),
     })),
     equipment,
+    trace,
+    orderHourly,
   }
 }
 

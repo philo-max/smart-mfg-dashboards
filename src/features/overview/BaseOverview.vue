@@ -122,7 +122,7 @@ const alarmCounts = computed(() => {
 
 .side {
   display: grid;
-  grid-template-rows: 262px 176px minmax(0, 1fr);
+  grid-template-rows: 274px 176px minmax(0, 1fr);
   gap: 14px;
   min-height: 0;
 }
