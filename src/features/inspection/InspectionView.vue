@@ -1,13 +1,158 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { FileText } from '@lucide/vue'
+import AkPanel from '@/components/ui/AkPanel.vue'
+import AkTabs from '@/components/ui/AkTabs.vue'
+import StatTile from '@/components/ui/StatTile.vue'
 import PointsPanel from '@/components/ui/PointsPanel.vue'
+import EChart from '@/components/charts/EChart.vue'
+import InspectionDetailModal from './InspectionDetailModal.vue'
+import InspectionReportModal from './InspectionReportModal.vue'
+import { defectPieOption, energyOption, stationBarOption, toleranceOption, trendOption } from './inspectionCharts'
+import { mttrOf } from './buildReport'
 import { MODULES } from '@/data/modules'
+import { FPY_THRESHOLD, INSPECTION_STATIONS } from '@/data/sim/constants'
+import { inspectionTotals } from '@/data/sim/selectors'
+import { usePlantStore } from '@/stores/plant'
+
+const POWER_ALERT_KW = 7.5
+
 const meta = MODULES.inspection
+const plant = usePlantStore()
+const ins = computed(() => plant.state.inspection)
+const totals = computed(() => inspectionTotals(plant.state))
+
+const range = ref<'24h' | '7d'>('24h')
+const filter = ref<'all' | 'fail'>('all')
+const detailFocus = ref<'pass' | 'fail' | null>(null)
+const reportOpen = ref(false)
+
+const trend = computed(() => trendOption(range.value === '24h' ? ins.value.hourly : ins.value.daily, FPY_THRESHOLD))
+const pie = computed(() => defectPieOption(ins.value.defects))
+const stations = computed(() => stationBarOption(ins.value.stations, FPY_THRESHOLD))
+const tolerance = computed(() => toleranceOption(ins.value.tolerance))
+const energy = computed(() => energyOption(ins.value.hourly, POWER_ALERT_KW))
+const records = computed(() => ins.value.records.filter((r) => filter.value === 'all' || !r.pass).slice(0, 9))
 </script>
 
 <template>
-  <div class="stub"><PointsPanel unit="inspection" :color="meta.color" /></div>
+  <div class="module">
+    <div class="col col--three">
+      <AkPanel title="检测实时计数" en="LIVE COUNTER · 24H" :color="meta.color">
+        <template #actions>
+          <button type="button" class="report-btn" @click="reportOpen = true"><FileText :size="14" />检测报告</button>
+        </template>
+        <div class="kpis">
+          <StatTile label="检测总数" :value="totals.total" />
+          <StatTile label="合格数量" :value="totals.pass" clickable hint="点击查看 24h 明细" @activate="detailFocus = 'pass'" />
+          <StatTile label="不合格数量" :value="totals.fail" clickable level="warn" hint="点击查看 24h 明细" @activate="detailFocus = 'fail'" />
+          <StatTile label="一次合格率" :value="totals.fpy" unit="%" :level="totals.fpy < FPY_THRESHOLD ? 'warn' : 'normal'" />
+          <StatTile label="不良品检出率" :value="totals.detect" unit="%" />
+          <StatTile label="异常闭环 MTTR" :value="mttrOf(plant.state)" unit="min" />
+        </div>
+      </AkPanel>
+      <AkPanel title="缺陷类型分布" en="DEFECT MIX"><EChart :option="pie" /></AkPanel>
+      <AkPanel title="检测位合格率" en="POSITION YIELD"><EChart :option="stations" /></AkPanel>
+    </div>
+
+    <div class="col col--center">
+      <AkPanel title="质量趋势" en="QUALITY TREND · FPY / PPM" :color="meta.color">
+        <template #actions>
+          <AkTabs v-model="range" :options="[{ value: '24h', label: '近 24 小时' }, { value: '7d', label: '近 7 天' }]" />
+        </template>
+        <EChart :option="trend" />
+      </AkPanel>
+      <AkPanel title="实时检测记录" en="LIVE RECORDS" :color="meta.color">
+        <template #actions>
+          <AkTabs v-model="filter" :options="[{ value: 'all', label: '全部' }, { value: 'fail', label: '仅 NG' }]" />
+        </template>
+        <div class="rec">
+          <div class="rec__row rec__row--head">
+            <span>时间</span><span>工件编号</span><span>RFID</span>
+            <span class="rec__pos">
+              <i v-for="(s, i) in INSPECTION_STATIONS" :key="s.name" :title="`${s.name} ${s.item}`">{{ i + 1 }}</i>
+            </span>
+            <span>结果</span><span>判定</span>
+          </div>
+          <div v-for="r in records" :key="r.id + r.time" class="rec__row">
+            <span class="ak-num">{{ r.time }}</span>
+            <span class="ak-num">{{ r.id }}</span>
+            <span class="ak-num">{{ r.rfid }}</span>
+            <span class="rec__pos">
+              <i v-for="(ok, i) in r.positions" :key="i" :class="ok ? 'ok' : 'ng'">{{ ok ? 'OK' : 'NG' }}</i>
+            </span>
+            <span :class="{ 'tone-risk': !r.pass }">{{ r.result }}</span>
+            <span><b class="tag" :class="r.pass ? 'ok' : 'ng'">{{ r.pass ? '合格' : '不合格' }}</b></span>
+          </div>
+        </div>
+      </AkPanel>
+    </div>
+
+    <div class="col col--three">
+      <AkPanel title="孔径公差分布" en="TOLERANCE · Φ2.50±0.03" :color="meta.color"><EChart :option="tolerance" /></AkPanel>
+      <AkPanel title="能耗 × 质量联动" en="ENERGY × QUALITY"><EChart :option="energy" /></AkPanel>
+      <PointsPanel unit="inspection" :color="meta.color" />
+    </div>
+
+    <InspectionDetailModal :focus="detailFocus" :hourly="ins.hourly" @close="detailFocus = null" />
+    <InspectionReportModal v-model:open="reportOpen" />
+  </div>
 </template>
 
 <style scoped>
-.stub { display: grid; grid-template-columns: 420px; }
+.col--three { grid-template-rows: 250px 1fr 1fr; }
+
+.kpis {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+}
+
+.kpis :deep(.stat__value) { font-size: 22px; }
+.kpis :deep(.stat) { padding: 6px 10px; }
+
+.report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0a0c0f;
+  background: var(--room-inspection);
+  border: 0;
+}
+
+.rec { flex: 1; min-height: 0; overflow: hidden; font-size: 13px; }
+
+.rec__row {
+  display: grid;
+  grid-template-columns: 76px 140px 76px 200px 1fr 70px;
+  gap: 8px;
+  align-items: center;
+  height: 27px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rec__row--head { color: var(--text-muted); font-size: 12px; height: 24px; }
+
+.rec__pos { display: flex; gap: 4px; }
+
+.rec__pos i {
+  flex: 1;
+  font-style: normal;
+  text-align: center;
+  font-size: 10px;
+  padding: 1px 0;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rec__pos i.ok { color: var(--signal-pos); background: rgba(71, 209, 140, 0.1); }
+.rec__pos i.ng { color: #fff; background: var(--signal-risk); }
+
+.tag { font-weight: 400; font-size: 11px; padding: 1px 8px; }
+.tag.ok { color: var(--signal-pos); border: 1px solid var(--signal-pos); }
+.tag.ng { color: var(--signal-risk); border: 1px solid var(--signal-risk); }
 </style>
