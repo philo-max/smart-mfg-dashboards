@@ -1,0 +1,275 @@
+/* =========================================================
+   TAB PHARMA — 健康市场与用药路径洞察台 (HEALTH MARKET & PATH INSIGHT)
+   Question: 哪类疾病和用药需求正在变化 · 影响哪些人群/区域 · 下一步关注什么
+   Direction: 暖深石墨 + 灰绿 + 药品琥珀; 红仅用于明确风险; 禁 emoji/中英双标题/泛滥发光
+   Not industrial HUD, not 3C product line-art. Scoped tokens only.
+   ========================================================= */
+
+#tab-pharma {
+  --ph-bg: #17150f;
+  --ph-panel: #211e16;
+  --ph-panel-2: #2a261c;
+  --ph-line: #3a3427;
+  --ph-line-soft: #2d291f;
+  --ph-ink: #f1ece0;
+  --ph-ink-2: #c3bba8;
+  --ph-ink-3: #8a8271;
+  --ph-ink-4: #625c4e;
+  --ph-green: #8aa77e;
+  --ph-amber: #d9a441;
+  --ph-amber-soft: rgba(217, 164, 65, 0.14);
+  --ph-red: #c85a4a;
+  min-width: 0;
+}
+
+#tab-pharma .ph-wrap {
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  min-height: 0;
+  padding: 2px;
+}
+
+/* ---------- L1 市场摘要（4 项结论） ---------- */
+.ph-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ph-sum-item {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 9px 13px;
+  background: var(--ph-panel);
+  border: 1px solid var(--ph-line-soft);
+  border-radius: 8px;
+  text-align: left; font: inherit; color: inherit;
+}
+.ph-sum-k { font-size: 0.68rem; color: var(--ph-ink-3); letter-spacing: 0.5px; }
+.ph-sum-v { font-size: 1.28rem; font-weight: 700; color: var(--ph-ink); line-height: 1.15; }
+.ph-sum-v small { font-size: 0.66rem; color: var(--ph-ink-3); font-weight: 500; margin-left: 3px; }
+.ph-sum-foot { font-size: 0.68rem; color: var(--ph-ink-3); }
+.ph-sum-item.up { border-left: 3px solid var(--ph-amber); }
+.ph-sum-item.up .ph-sum-v { color: var(--ph-amber); }
+.ph-sum-item.green { border-left: 3px solid var(--ph-green); }
+.ph-sum-item.green .ph-sum-v { color: var(--ph-green); }
+.ph-sum-item.risk { border-left: 3px solid var(--ph-red); }
+.ph-sum-item.risk .ph-sum-v { color: var(--ph-red); }
+.ph-sum-item.is-link { cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease; }
+.ph-sum-item.is-link:hover { border-color: var(--ph-amber); background: var(--ph-panel-2); }
+.ph-sum-item.is-link:focus-visible { outline: 2px solid var(--ph-amber); outline-offset: 2px; }
+
+/* ---------- L2 路径图 + 选中详情 ---------- */
+.ph-body { display: grid; grid-template-columns: minmax(0, 58fr) minmax(0, 42fr); gap: 10px; min-height: 0; }
+
+.ph-graph-panel {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 11px 15px 10px;
+  background: radial-gradient(120% 95% at 50% 30%, #221f16 0%, var(--ph-bg) 72%);
+  border: 1px solid var(--ph-line-soft);
+  border-radius: 10px;
+  min-height: 0;
+}
+.ph-graph-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ph-headline { flex: 1; font-size: 0.98rem; font-weight: 600; color: var(--ph-ink); line-height: 1.42; margin: 0; }
+.ph-presets { display: flex; gap: 6px; flex-shrink: 0; }
+.ph-preset {
+  font: inherit; font-size: 0.72rem; cursor: pointer;
+  padding: 5px 10px; border-radius: 20px;
+  background: transparent; color: var(--ph-ink-2); border: 1px solid var(--ph-line);
+  transition: all 0.18s ease;
+}
+.ph-preset:hover { border-color: var(--ph-amber); color: var(--ph-ink); }
+.ph-preset.active { background: var(--ph-amber-soft); border-color: var(--ph-amber); color: var(--ph-amber); }
+.ph-preset:focus-visible { outline: 2px solid var(--ph-amber); outline-offset: 2px; }
+
+.ph-graph { position: relative; flex: 1; min-height: 0; }
+.ph-links { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ph-links line { stroke: var(--ph-line); stroke-width: 0.4; }
+.ph-links line.active { stroke: var(--ph-amber); stroke-width: 0.7; }
+
+.ph-hub {
+  position: absolute; left: 50%; top: 47%; transform: translate(-50%, -50%);
+  width: 168px; text-align: center;
+  padding: 12px 10px; border-radius: 50%;
+  background: var(--ph-panel-2);
+  border: 1px solid var(--ph-amber);
+  box-shadow: 0 0 0 6px rgba(217, 164, 65, 0.06);
+}
+.ph-hub-k { font-size: 0.64rem; color: var(--ph-ink-3); letter-spacing: 2px; }
+.ph-hub-disease { display: block; font-size: 1.12rem; font-weight: 700; color: var(--ph-ink); margin: 3px 0; }
+.ph-hub-sub { font-size: 0.68rem; color: var(--ph-ink-3); }
+
+.ph-sat {
+  position: absolute; transform: translate(-50%, -50%);
+  min-width: 104px; text-align: center;
+  padding: 7px 10px; border-radius: 9px;
+  background: var(--ph-panel);
+  border: 1px solid var(--ph-line);
+}
+.ph-sat-k { display: block; font-size: 0.62rem; color: var(--ph-ink-4); letter-spacing: 0.5px; }
+.ph-sat-v { display: block; font-size: 0.86rem; font-weight: 600; color: var(--ph-ink); margin-top: 2px; }
+.ph-sat.watch { border-color: rgba(217, 164, 65, 0.55); }
+.ph-sat.risk { border-color: rgba(200, 90, 74, 0.6); }
+.ph-sat.risk .ph-sat-v { color: var(--ph-red); }
+
+.ph-spectrum { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.ph-chip {
+  font: inherit; font-size: 0.72rem; cursor: pointer;
+  padding: 4px 11px; border-radius: 16px;
+  background: transparent; color: var(--ph-ink-2);
+  border: 1px solid var(--ph-line);
+  display: inline-flex; gap: 6px; align-items: center;
+  transition: all 0.18s ease;
+}
+.ph-chip:hover { border-color: var(--ph-amber); color: var(--ph-ink); }
+.ph-chip.active { background: var(--ph-amber-soft); border-color: var(--ph-amber); color: var(--ph-amber); }
+.ph-chip:focus-visible { outline: 2px solid var(--ph-amber); outline-offset: 2px; }
+.ph-chip-g { font-size: 0.63rem; color: var(--ph-green); }
+.ph-chip.active .ph-chip-g { color: var(--ph-amber); }
+
+/* detail */
+.ph-detail {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px;
+  background: var(--ph-panel);
+  border: 1px solid var(--ph-line-soft);
+  border-radius: 10px;
+  overflow-y: auto; min-height: 0;
+}
+.ph-detail::-webkit-scrollbar { width: 5px; }
+.ph-detail::-webkit-scrollbar-thumb { background: #3a3427; border-radius: 3px; }
+.ph-detail-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ph-detail-disease { font-size: 1rem; font-weight: 700; color: var(--ph-ink); }
+.ph-detail-tag { font-size: 0.68rem; color: var(--ph-amber); }
+.ph-mini-wrap { height: 58px; }
+.ph-mini-wrap canvas { width: 100%; height: 100%; display: block; }
+.ph-mini-note { font-size: 0.66rem; color: var(--ph-ink-3); }
+
+.ph-block { display: flex; flex-direction: column; gap: 5px; }
+.ph-block-k { font-size: 0.64rem; color: var(--ph-ink-4); letter-spacing: 0.5px; }
+.ph-pop { display: flex; flex-direction: column; gap: 4px; }
+.ph-pop-row { display: grid; grid-template-columns: 48px 1fr 32px; gap: 8px; align-items: center; font-size: 0.72rem; }
+.ph-pop-name { color: var(--ph-ink-3); }
+.ph-pop-track { height: 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.05); overflow: hidden; }
+.ph-pop-fill { display: block; height: 100%; border-radius: 4px; background: var(--ph-green); }
+.ph-pop-val { text-align: right; color: var(--ph-ink-2); font-size: 0.68rem; }
+.ph-detail-row { display: flex; justify-content: space-between; font-size: 0.76rem; }
+.ph-detail-row .k { color: var(--ph-ink-3); }
+.ph-detail-row .v { color: var(--ph-ink); font-weight: 600; }
+.ph-risk { font-size: 0.76rem; color: var(--ph-ink-2); line-height: 1.4; border-left: 2px solid var(--ph-amber); padding-left: 9px; }
+.ph-risk.high { border-left-color: var(--ph-red); color: var(--ph-ink); }
+
+.ph-actions { display: flex; flex-direction: column; gap: 6px; }
+.ph-action {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font: inherit; font-size: 0.76rem; text-align: left; cursor: pointer;
+  padding: 7px 10px; border-radius: 6px;
+  background: var(--ph-panel-2); color: var(--ph-ink); border: 1px solid var(--ph-line);
+  transition: all 0.18s ease;
+}
+.ph-action:hover { border-color: var(--ph-amber); }
+.ph-action:focus-visible { outline: 2px solid var(--ph-amber); outline-offset: 2px; }
+.ph-action.risk { border-color: rgba(200, 90, 74, 0.7); }
+.ph-action-status {
+  flex-shrink: 0; font-size: 0.64rem; padding: 1px 7px; border-radius: 9px;
+  border: 1px solid var(--ph-line); color: var(--ph-ink-3); white-space: nowrap;
+}
+.ph-action-status.s1 { border-color: var(--ph-amber); color: var(--ph-amber); }
+.ph-action-status.s2 { border-color: var(--ph-green); color: var(--ph-green); }
+.ph-action-status.s3 { border-color: #7fa0b8; color: #9db8cc; }
+
+/* ---------- L3 证据（最多 3 图） ---------- */
+.ph-evidence { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ph-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 13px 11px;
+  background: var(--ph-panel);
+  border: 1px solid var(--ph-line-soft);
+  border-radius: 8px; min-height: 0;
+}
+.ph-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ph-card-head h3 { font-size: 0.82rem; font-weight: 600; color: var(--ph-ink); margin: 0; }
+.ph-chart-wrap { position: relative; height: 84px; }
+.ph-chart-wrap canvas { width: 100%; height: 100%; display: block; }
+.ph-note { font-size: 0.68rem; color: var(--ph-ink-3); line-height: 1.35; }
+.ph-note b { color: var(--ph-ink-2); }
+
+.ph-rank { display: flex; flex-direction: column; gap: 6px; justify-content: center; flex: 1; }
+.ph-rank-row { display: grid; grid-template-columns: 62px 1fr 40px; gap: 8px; align-items: center; font-size: 0.72rem; }
+.ph-rank-name { color: var(--ph-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ph-rank-track { height: 10px; border-radius: 4px; background: rgba(255, 255, 255, 0.05); overflow: hidden; }
+.ph-rank-fill { display: block; height: 100%; border-radius: 4px; background: var(--ph-green); transition: width 0.4s ease; }
+.ph-rank-row.top .ph-rank-fill { background: var(--ph-amber); }
+.ph-rank-val { text-align: right; color: var(--ph-ink-2); font-size: 0.68rem; }
+
+.ph-region { display: flex; flex-direction: column; gap: 6px; justify-content: center; flex: 1; }
+.ph-region-row { display: grid; grid-template-columns: 40px 1fr 34px; gap: 8px; align-items: center; font-size: 0.72rem; }
+.ph-region-name { color: var(--ph-ink-3); }
+.ph-region-track { height: 10px; border-radius: 4px; background: rgba(255, 255, 255, 0.05); overflow: hidden; }
+.ph-region-fill { display: block; height: 100%; border-radius: 4px; background: var(--ph-amber); transition: width 0.4s ease; }
+.ph-region-val { text-align: right; color: var(--ph-ink-2); font-size: 0.68rem; }
+
+/* ---------- L4 原始信号（低权重） ---------- */
+.ph-raw { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 9px 13px; background: var(--ph-panel); border: 1px solid var(--ph-line-soft); border-radius: 8px; }
+.ph-meta { display: flex; flex-direction: column; gap: 4px; }
+.ph-meta-k { font-size: 0.64rem; color: var(--ph-ink-4); }
+.ph-meta-v { font-size: 0.72rem; color: var(--ph-ink-2); line-height: 1.4; }
+.ph-meta-note { font-size: 0.64rem; color: var(--ph-ink-4); line-height: 1.4; }
+.ph-signals { display: flex; flex-direction: column; gap: 4px; }
+.ph-signal { display: flex; gap: 8px; align-items: baseline; font-size: 0.72rem; }
+.ph-signal-tag { flex-shrink: 0; font-size: 0.62rem; color: var(--ph-amber); border: 1px solid var(--ph-line); border-radius: 8px; padding: 0 6px; }
+.ph-signal-tag.risk { color: var(--ph-red); }
+.ph-signal-text { color: var(--ph-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- responsive + vertical fit ---------- */
+@media (max-width: 1180px) {
+  .ph-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ph-body { grid-template-columns: 1fr; }
+  .ph-evidence { grid-template-columns: 1fr; }
+  .ph-raw { grid-template-columns: 1fr; }
+}
+@media (max-height: 1000px) {
+  #tab-pharma .ph-wrap { gap: 6px; }
+  .ph-summary { gap: 8px; }
+  .ph-sum-item { padding: 6px 12px; }
+  .ph-sum-v { font-size: 1.1rem; }
+  .ph-sum-foot { font-size: 0.64rem; }
+  .ph-graph-panel { padding: 8px 14px 6px; }
+  .ph-headline { font-size: 0.84rem; line-height: 1.34; }
+  .ph-hub { width: 142px; padding: 9px 8px; }
+  .ph-hub-disease { font-size: 1rem; }
+  .ph-sat { padding: 5px 8px; min-width: 92px; }
+  .ph-chart-wrap { height: 62px; }
+  .ph-mini-wrap { height: 46px; }
+  .ph-card { padding: 7px 11px 8px; gap: 5px; }
+  .ph-detail { gap: 6px; padding: 9px 12px; }
+  .ph-raw { padding: 6px 11px; }
+  .ph-note { font-size: 0.64rem; }
+}
+
+.ph-graph-panel { overflow: hidden; }
+.ph-graph::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 360px;
+  height: 360px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 164, 65, .08), transparent 67%);
+  animation: phAura 8s ease-in-out infinite;
+  pointer-events: none;
+}
+.ph-hub { animation: phHubBreath 5s ease-in-out infinite; }
+#ph-sat-trend { animation: phFloatTop 5.6s ease-in-out infinite; }
+#ph-sat-therapy { animation: phFloatLeft 6.2s ease-in-out infinite; }
+#ph-sat-pop { animation: phFloatRight 6.8s ease-in-out infinite; }
+#ph-sat-reorder { animation: phFloatBottom 6s ease-in-out infinite; }
+.ph-evidence { animation: phEvidenceIn .7s .16s cubic-bezier(.16, 1, .3, 1) both; }
+.ph-raw { animation: phEvidenceIn .7s .24s cubic-bezier(.16, 1, .3, 1) both; }
+
+@keyframes phAura { 0%, 100% { transform: translate(-50%, -50%) scale(.9); opacity: .55; } 50% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; } }
+@keyframes phHubBreath { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.035); } }
+@keyframes phFloatTop { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% - 5px)); } }
+@keyframes phFloatLeft { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(calc(-50% - 5px), -50%); } }
+@keyframes phFloatRight { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(calc(-50% + 5px), -50%); } }
+@keyframes phFloatBottom { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% + 5px)); } }
+@keyframes phEvidenceIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }

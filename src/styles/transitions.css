@@ -1,0 +1,45 @@
+/* =========================================================
+   V2 主题过渡与动效降级
+   页签切换：内容退场 -> 主题色过渡 -> 新页分层进入
+   注：具体位移/透明度由 motion-v 组件承担；这里只做主题色的连续过渡
+   ========================================================= */
+
+.theme-surface {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  transition:
+    background-color var(--motion-theme) var(--ease-standard),
+    color var(--motion-theme) var(--ease-standard);
+}
+
+.theme-surface .panel {
+  transition:
+    background-color var(--motion-theme) var(--ease-standard),
+    border-color var(--motion-theme) var(--ease-standard);
+}
+
+/* 页签按钮等可复用的主题感知过渡 */
+.theme-aware {
+  transition:
+    color var(--motion-theme) var(--ease-standard),
+    background-color var(--motion-theme) var(--ease-standard),
+    border-color var(--motion-theme) var(--ease-standard);
+}
+
+/* 尊重系统「减少动态效果」：禁用非必要动画与主题过渡 */
+@media (prefers-reduced-motion: reduce) {
+  .theme-surface,
+  .theme-surface .panel,
+  .theme-aware {
+    transition-duration: 0.01ms !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

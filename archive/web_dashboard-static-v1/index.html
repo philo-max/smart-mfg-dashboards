@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能制造数据可视化与数字孪生综合管控平台</title>
+  <meta name="description" content="联想智能制造数据可视化与IIoT工业物联网数字孪生综合实训大屏系统">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="manufacturing.css">
+  <link rel="stylesheet" href="threec.css">
+  <link rel="stylesheet" href="pharma.css">
+  <!-- Google Fonts for crisp industrial typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body data-tab="tab-line">
+  <!-- Ambient Cyber Scanlines & Glow Background -->
+  <div class="cyber-grid-bg"></div>
+  <div class="cyber-vignette"></div>
+
+  <!-- Main Scalable Stage -->
+  <div id="screen-container">
+
+    <!-- HEADER BAR -->
+    <header class="hud-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <span class="pulse-dot active" id="net-pulse"></span>
+          <span class="brand-text">LENOVO IIoT HUB</span>
+        </div>
+        <div class="edge-status-pill">
+          <span class="status-indicator live" id="edge-agent-badge"></span>
+          <span class="edge-text">EdgeAgent 实时连接中</span>
+          <span class="hz-tag">1000ms/点位</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <h1 class="main-title">智能制造数据可视化综合管控中枢</h1>
+        <div class="title-sub">SMART MANUFACTURING &amp; INDUSTRIAL IOT DIGITAL TWIN SYSTEM</div>
+      </div>
+
+      <div class="header-right">
+        <!-- Navigation Tabs -->
+        <nav class="hud-nav">
+          <button class="nav-tab active" id="tab-btn-line" data-tab="tab-line">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l6-4 6 4v14"/><path d="M9 21v-5h6v5"/><path d="M9 10h.01M15 10h.01"/></svg>
+            产线数字孪生
+          </button>
+          <button class="nav-tab" id="tab-btn-3c" data-tab="tab-3c">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            3C舆情画像
+          </button>
+          <button class="nav-tab" id="tab-btn-pharma" data-tab="tab-pharma">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+            医药健康分析
+          </button>
+        </nav>
+        <div class="clock-box">
+          <div id="hud-clock-time">08:30:00</div>
+          <div id="hud-clock-date">2026-09-14 MON</div>
+        </div>
+        <button class="icon-btn" id="btn-fullscreen" title="全屏显示" aria-label="全屏显示">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M16 21h3a2 2 0 0 0 2-2v-3M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- SIMULATION CONTROL BAR -->
+    <div class="sim-control-strip">
+      <div class="sim-info">
+        <span class="sim-label">工业仿真情景台</span>
+        <span class="sim-desc" id="sim-scenario-desc">当前状态：全线平稳加工中（正常模式）</span>
+      </div>
+      <div class="sim-actions">
+        <button class="sim-btn normal active" id="sim-btn-normal" data-action="normal"><span class="sim-led led-green"></span>正常节拍</button>
+        <button class="sim-btn warn" id="sim-btn-agv-jam" data-action="agv_jam"><span class="sim-led led-yellow"></span>AGV 搬运阻塞</button>
+        <button class="sim-btn alert" id="sim-btn-defect-spike" data-action="defect_spike"><span class="sim-led led-red"></span>装配不良突增</button>
+        <button class="sim-btn warn" id="sim-btn-takt-timeout" data-action="takt_timeout"><span class="sim-led led-yellow"></span>质检节拍超时</button>
+        <button class="sim-btn toggle" id="sim-btn-pause" data-action="toggle">暂停推流</button>
+      </div>
+    </div>
+
+    <!-- MAIN BODY CONTENT -->
+    <main class="hud-main">
+
+      <!-- ============================================== -->
+      <!-- TAB 1: 智能制造产线 · 订单 01218 追踪看板          -->
+      <!-- 唯一命题：订单 01218 在哪里、是否会延误、应由谁处理？ -->
+      <!-- ============================================== -->
+      <section class="tab-pane active" id="tab-line">
+
+        <!-- ===== 第一层 L1：订单核心状态 ===== -->
+        <div class="mf-order" id="mf-order">
+          <div class="mf-order-id">
+            <span class="mf-order-kicker">实时订单</span>
+            <span class="mf-order-no">#01218</span>
+            <span class="mf-order-prod">ThinkBook 14+ 主板总成</span>
+          </div>
+
+          <div class="mf-flow" id="mf-flow" aria-label="订单当前流向：入库、装配、质检、出库">
+            <div class="mf-node" id="mf-node-storage" data-node="storage">
+              <span class="mf-node-dot"></span>
+              <span class="mf-node-name">入库</span>
+              <span class="mf-node-state" id="mf-nstate-storage">已完成</span>
+            </div>
+            <span class="mf-link" id="mf-link-storage"></span>
+            <div class="mf-node" id="mf-node-assembly" data-node="assembly">
+              <span class="mf-node-dot"></span>
+              <span class="mf-node-name">装配</span>
+              <span class="mf-node-state" id="mf-nstate-assembly">运行中</span>
+            </div>
+            <span class="mf-link" id="mf-link-assembly"></span>
+            <div class="mf-node" id="mf-node-testing" data-node="testing">
+              <span class="mf-node-dot"></span>
+              <span class="mf-node-name">质检</span>
+              <span class="mf-node-state" id="mf-nstate-testing">待检</span>
+            </div>
+            <span class="mf-link" id="mf-link-testing"></span>
+            <div class="mf-node" id="mf-node-outbound" data-node="outbound">
+              <span class="mf-node-dot"></span>
+              <span class="mf-node-name">出库</span>
+              <span class="mf-node-state" id="mf-nstate-outbound">待出库</span>
+            </div>
+          </div>
+
+          <div class="mf-order-risk">
+            <div class="mf-risk-cell">
+              <span class="mf-risk-label">风险等级</span>
+              <span class="mf-risk-val" id="mf-risk-level">低</span>
+            </div>
+            <div class="mf-risk-cell">
+              <span class="mf-risk-label">预计交付</span>
+              <span class="mf-risk-val" id="mf-risk-eta">今天 14:20</span>
+            </div>
+            <div class="mf-risk-cell">
+              <span class="mf-risk-label">处理责任</span>
+              <span class="mf-risk-val" id="mf-risk-owner">产线班组 A</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 第二层 L2（主视觉）+ 决策区 ===== -->
+        <div class="mf-main">
+
+          <!-- 数字孪生主视觉 -->
+          <div class="mf-twin">
+            <div class="mf-panel-head">
+              <span class="mf-tag">L2 · 产线数字孪生</span>
+              <h2 class="mf-twin-title" id="mf-twin-title">实时流向：入库 → 装配 → 质检 → 出库</h2>
+              <span class="mf-live"><span class="mf-live-dot"></span>LIVE</span>
+            </div>
+
+            <div class="mf-stage" id="mf-stage">
+              <!-- 连续物流路径 + 移动托盘 -->
+              <div class="mf-track" aria-hidden="true">
+                <span class="mf-track-flow"></span>
+                <span class="mf-pallet" id="mf-pallet"></span>
+              </div>
+
+              <!-- 工位 1：入库（立体库） -->
+              <button class="mf-station" id="mf-st-storage" data-station="storage" type="button">
+                <span class="mf-st-head"><span class="mf-st-code">ST-01</span><span class="mf-st-led" data-led></span></span>
+                <span class="mf-st-visual mf-vis-storage" aria-hidden="true">
+                  <span class="mf-rack"><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i></span>
+                </span>
+                <span class="mf-st-name">入库 · 立体库</span>
+                <span class="mf-st-core">
+                  <span class="mf-st-state" data-state>正常</span>
+                  <span class="mf-st-value" data-value>库容 82%</span>
+                </span>
+              </button>
+
+              <!-- 工位 2：装配 -->
+              <button class="mf-station" id="mf-st-assembly" data-station="assembly" type="button">
+                <span class="mf-st-head"><span class="mf-st-code">ST-02</span><span class="mf-st-led" data-led></span></span>
+                <span class="mf-st-visual mf-vis-assembly" aria-hidden="true">
+                  <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="22" y="36" width="20" height="8" rx="2"/><path d="M32 36V20"/><path d="M32 20 46 12"/><path d="M46 12 54 22"/><circle cx="32" cy="20" r="3.4"/><circle cx="46" cy="12" r="3.4"/></svg>
+                </span>
+                <span class="mf-st-name">装配 · 精密单元</span>
+                <span class="mf-st-core">
+                  <span class="mf-st-state" data-state>正常</span>
+                  <span class="mf-st-value" data-value>节拍 18.5s</span>
+                </span>
+              </button>
+
+              <!-- 工位 3：质检 -->
+              <button class="mf-station" id="mf-st-testing" data-station="testing" type="button">
+                <span class="mf-st-head"><span class="mf-st-code">ST-03</span><span class="mf-st-led" data-led></span></span>
+                <span class="mf-st-visual mf-vis-testing" aria-hidden="true">
+                  <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8h36"/><path d="M32 8v10"/><path d="M26 18h12l-6 12z"/><path d="M32 30v8"/><rect x="18" y="38" width="28" height="6" rx="2"/></svg>
+                </span>
+                <span class="mf-st-name">质检 · 激光视觉</span>
+                <span class="mf-st-core">
+                  <span class="mf-st-state" data-state>正常</span>
+                  <span class="mf-st-value" data-value>良率 98.4%</span>
+                </span>
+              </button>
+
+              <!-- 工位 4：出库（AGV） -->
+              <button class="mf-station" id="mf-st-outbound" data-station="outbound" type="button">
+                <span class="mf-st-head"><span class="mf-st-code">ST-04</span><span class="mf-st-led" data-led></span></span>
+                <span class="mf-st-visual mf-vis-outbound" aria-hidden="true">
+                  <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="24" width="26" height="12" rx="3"/><rect x="44" y="20" width="10" height="16" rx="2"/><circle cx="22" cy="39" r="4"/><circle cx="46" cy="39" r="4"/><path d="M20 24v-5h14v5"/></svg>
+                </span>
+                <span class="mf-st-name">出库 · AGV 调度</span>
+                <span class="mf-st-core">
+                  <span class="mf-st-state" data-state>正常</span>
+                  <span class="mf-st-value" data-value>AGV 搬运中</span>
+                </span>
+              </button>
+            </div>
+
+            <div class="mf-station-detail" id="mf-station-detail">
+              <span class="mf-sd-kicker">当前选中工位</span>
+              <span class="mf-sd-name" id="mf-sd-name">装配 · 精密单元（ST-02）</span>
+              <span class="mf-sd-sep"></span>
+              <span class="mf-sd-field">批次 <b id="mf-sd-batch">01218</b></span>
+              <span class="mf-sd-field">异常 <b id="mf-sd-exc">无</b></span>
+              <span class="mf-sd-field">动作 <b id="mf-sd-act">维持节拍</b></span>
+            </div>
+          </div>
+
+          <!-- 决策区（右侧三类内容） -->
+          <aside class="mf-decision">
+            <div class="mf-dec-block" id="mf-risk-block">
+              <div class="mf-dec-head"><span class="mf-dec-idx">01</span>当前风险</div>
+              <div class="mf-risk-grid">
+                <div class="mf-risk-row"><span class="k">等级</span><span class="v" id="mf-risk-badge">低</span></div>
+                <div class="mf-risk-row"><span class="k">影响工位</span><span class="v" id="mf-risk-station">—</span></div>
+                <div class="mf-risk-row"><span class="k">预计影响</span><span class="v" id="mf-risk-impact">无延误</span></div>
+              </div>
+            </div>
+
+            <div class="mf-dec-block" id="mf-cause-block">
+              <div class="mf-dec-head"><span class="mf-dec-idx">02</span><span id="mf-cause-title">近期缺陷构成</span></div>
+              <p class="mf-cause" id="mf-cause">当前无异常，产线按标准节拍运行；下列为近 24h 缺陷构成参考</p>
+              <div class="mf-defect-bars" id="mf-defect-bars"></div>
+            </div>
+
+            <div class="mf-dec-block" id="mf-action-block">
+              <div class="mf-dec-head"><span class="mf-dec-idx">03</span>建议动作</div>
+              <div class="mf-actions" id="mf-actions"></div>
+            </div>
+
+            <div class="mf-trace" id="mf-trace">PLC 点位：ST-02 [DB10.DBW4 实际扭矩]</div>
+          </aside>
+        </div>
+
+        <!-- ===== 第三层 L3 辅助指标 + 第四层 L4 日志 ===== -->
+        <div class="mf-bottom">
+          <div class="mf-metrics" id="mf-metrics">
+            <div class="mf-metric">
+              <span class="mf-metric-k">设备综合效率 OEE</span>
+              <span class="mf-metric-v" id="mf-m-oee">88.2<small>%</small></span>
+            </div>
+            <div class="mf-metric">
+              <span class="mf-metric-k">一次良率 FPY</span>
+              <span class="mf-metric-v" id="mf-m-fpy">98.4<small>%</small></span>
+            </div>
+            <div class="mf-metric">
+              <span class="mf-metric-k">单件能耗</span>
+              <span class="mf-metric-v" id="mf-m-kwh">0.38<small>kWh</small></span>
+            </div>
+            <div class="mf-metric">
+              <span class="mf-metric-k">节拍波动</span>
+              <span class="mf-metric-v" id="mf-m-var">±0.32<small>s</small></span>
+            </div>
+            <div class="mf-metric">
+              <span class="mf-metric-k">瞬时总功率</span>
+              <span class="mf-metric-v" id="mf-m-kw">42.8<small>kW</small></span>
+            </div>
+          </div>
+
+          <div class="mf-log">
+            <div class="mf-log-head">
+              <span>边缘网关日志</span>
+              <span class="mf-log-count" id="live-alarm-count">0 报警</span>
+            </div>
+            <div class="mf-log-list" id="mf-log-list">
+              <div class="log-item info">
+                <span class="time">08:29:10</span>
+                <span class="badge info">INFO</span>
+                <span class="msg">EdgeServer 网关握手成功，16 个通道上线</span>
+              </div>
+              <div class="log-item ok">
+                <span class="time">08:30:05</span>
+                <span class="badge ok">OPR</span>
+                <span class="msg">订单 01218 批次进入装配工位，扭矩 4.2 N·m</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 2: 3C 智能硬件售后舆情与硬件偏好驾驶舱         -->
+      <!-- ============================================== -->
+      <section class="tab-pane" id="tab-3c">
+        <div class="tc-wrap">
+
+          <!-- L1：产品口碑摘要（4 项结论，非通用 KPI 排卡） -->
+          <div class="tc-summary" id="tc-summary">
+            <div class="tc-sum-item">
+              <span class="tc-sum-k">综合满意度</span>
+              <span class="tc-sum-v">87.4<small>%</small></span>
+              <span class="tc-sum-foot">较上周期 +2.3%</span>
+            </div>
+            <div class="tc-sum-item">
+              <span class="tc-sum-k">样本量与采集周期</span>
+              <span class="tc-sum-v">10,482<small>条</small></span>
+              <span class="tc-sum-foot">近 30 天 · 去重后有效样本</span>
+            </div>
+            <button class="tc-sum-item is-link positive" id="tc-sum-pos" type="button">
+              <span class="tc-sum-k">最强正向体验</span>
+              <span class="tc-sum-v">屏幕与显示</span>
+              <span class="tc-sum-foot">好评率 92% · 创作用户最认可</span>
+            </button>
+            <button class="tc-sum-item is-link negative" id="tc-sum-neg" type="button">
+              <span class="tc-sum-k">最需处理负向体验</span>
+              <span class="tc-sum-v">散热与噪声</span>
+              <span class="tc-sum-foot">差评 59% · 长时高负载集中</span>
+            </button>
+          </div>
+
+          <!-- L2：产品体验主视觉（解剖图 + 可点击热点） + 选中详情 -->
+          <div class="tc-body">
+            <div class="tc-stage">
+              <div class="tc-stage-head">
+                <h2 class="tc-headline" id="tc-headline">正在读取体验要素…</h2>
+                <div class="tc-presets" id="tc-presets">
+                  <button class="tc-preset active" data-view="overall" type="button">综合口碑</button>
+                  <button class="tc-preset" data-view="thermal" type="button">性能与散热</button>
+                  <button class="tc-preset" data-view="screen" type="button">屏幕与便携</button>
+                </div>
+              </div>
+
+              <div class="tc-model" id="tc-model">
+                <svg class="tc-laptop" viewBox="0 0 320 200" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <!-- 打开状态笔记本线稿（抽象产品模型） -->
+                  <rect x="78" y="24" width="164" height="104" rx="7" stroke="#39414d" stroke-width="2.2"/>
+                  <rect x="88" y="33" width="144" height="86" rx="3" stroke="#2b323c" stroke-width="1.4"/>
+                  <path d="M88 33h144" stroke="#2b323c" stroke-width="1.4"/>
+                  <circle cx="160" cy="124" r="1.6" fill="#39414d"/>
+                  <path d="M62 140h196l26 26H36z" stroke="#39414d" stroke-width="2.2"/>
+                  <path d="M62 140h196" stroke="#2b323c" stroke-width="1.4"/>
+                  <path d="M96 150h128M92 158h136" stroke="#2b323c" stroke-width="1.2"/>
+                  <rect x="140" y="150" width="40" height="13" rx="2.5" stroke="#2b323c" stroke-width="1.2"/>
+                  <path d="M36 166h248" stroke="#232a33" stroke-width="1.2"/>
+                </svg>
+                <!-- 热点由 app.js 依据同一 state 注入 -->
+              </div>
+              <div class="tc-hint">点击产品部位查看该体验的口碑证据；右上预置视角可快速切换</div>
+            </div>
+
+            <aside class="tc-detail" id="tc-detail">
+              <div class="tc-detail-head">
+                <span class="tc-detail-part" id="tc-detail-part">—</span>
+                <span class="tc-detail-heat" id="tc-detail-heat"></span>
+              </div>
+
+              <div class="tc-posneg">
+                <div class="tc-pn-bar"><span class="tc-pn-pos" id="tc-pn-pos" style="width:88%"></span></div>
+                <div class="tc-pn-legend">
+                  <span class="pos">正面 <b id="tc-pn-pos-v">88%</b></span>
+                  <span class="neg">负面 <b id="tc-pn-neg-v">12%</b></span>
+                </div>
+              </div>
+
+              <div class="tc-block">
+                <span class="tc-block-k">高频用户原话</span>
+                <ul class="tc-quotes" id="tc-quotes"></ul>
+              </div>
+
+              <div class="tc-block">
+                <span class="tc-block-k">受影响人群</span>
+                <div class="tc-audience" id="tc-audience"></div>
+                <div class="tc-aud-diff" id="tc-aud-diff"></div>
+              </div>
+
+              <div class="tc-block">
+                <span class="tc-block-k">建议动作</span>
+                <div class="tc-actions" id="tc-actions"></div>
+              </div>
+            </aside>
+          </div>
+
+          <!-- L3：证据与对比（趋势 / 用户分层 / 同维度对比，无词云） -->
+          <div class="tc-evidence">
+            <div class="tc-card">
+              <div class="tc-card-head">
+                <h3>情感趋势</h3>
+                <div class="tc-range" id="tc-range">
+                  <button class="tc-range-btn" data-range="7" type="button">7天</button>
+                  <button class="tc-range-btn active" data-range="30" type="button">30天</button>
+                </div>
+              </div>
+              <div class="tc-chart-wrap"><canvas id="tc-trend"></canvas></div>
+              <div class="tc-note" id="tc-trend-note"></div>
+            </div>
+
+            <div class="tc-card">
+              <div class="tc-card-head"><h3>用户分层态度差异</h3></div>
+              <div class="tc-segments" id="tc-segments"></div>
+            </div>
+
+            <div class="tc-card">
+              <div class="tc-card-head"><h3>同维度机型对比</h3></div>
+              <div class="tc-bars" id="tc-compare"></div>
+              <div class="tc-note" id="tc-compare-note"></div>
+            </div>
+          </div>
+
+          <!-- L4：原始信号（低权重，不抢主视觉） -->
+          <div class="tc-raw">
+            <div class="tc-feed">
+              <div class="tc-src" id="tc-feed-src">最新高价值评论流</div>
+              <div class="tc-feed-list" id="tc-feed-list"></div>
+            </div>
+            <div class="tc-meta">
+              <span class="tc-meta-k">数据来源与去重规则</span>
+              <span class="tc-meta-v" id="tc-meta-source"></span>
+              <span class="tc-meta-note" id="tc-meta-note"></span>
+              <details class="tc-kw" id="tc-kw">
+                <summary>展开原始关键词</summary>
+                <div class="tc-kw-body" id="tc-kw-body"></div>
+              </details>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 3: 健康市场与用药路径洞察台                     -->
+      <!-- 命题：哪类疾病和用药需求正在变化，影响哪些人群/区域，下一步关注什么 -->
+      <!-- ============================================== -->
+      <section class="tab-pane" id="tab-pharma">
+        <div class="ph-wrap">
+
+          <!-- L1：市场摘要（4 项结论） -->
+          <div class="ph-summary">
+            <div class="ph-sum-item up">
+              <span class="ph-sum-k">销售总额与变化</span>
+              <span class="ph-sum-v">¥2,845,600<small>+6.8%</small></span>
+              <span class="ph-sum-foot">近 12 个月流水 · 同比上升</span>
+            </div>
+            <div class="ph-sum-item green">
+              <span class="ph-sum-k">核心疾病谱</span>
+              <span class="ph-sum-v">心脑血管 · 呼吸慢病</span>
+              <span class="ph-sum-foot">合计贡献销售额 46.6%</span>
+            </div>
+            <button class="ph-sum-item is-link up" id="ph-sum-growth" type="button">
+              <span class="ph-sum-k">增长最快治疗领域</span>
+              <span class="ph-sum-v">呼吸慢病<small>+12.4%</small></span>
+              <span class="ph-sum-foot">吸入 / 抗炎类需求加速 · 点击查看</span>
+            </button>
+            <button class="ph-sum-item is-link risk" id="ph-sum-risk" type="button">
+              <span class="ph-sum-k">需关注的供需 / 复购风险</span>
+              <span class="ph-sum-v">慢病复购周期拉长</span>
+              <span class="ph-sum-foot">呼吸与骨关节供给偏紧 · 点击查看</span>
+            </button>
+          </div>
+
+          <!-- L2：疾病—治疗—人群 路径图 + 选中详情 -->
+          <div class="ph-body">
+            <div class="ph-graph-panel">
+              <div class="ph-graph-head">
+                <h2 class="ph-headline" id="ph-headline">正在读取市场信号…</h2>
+                <div class="ph-presets" id="ph-presets">
+                  <button class="ph-preset active" data-view="overall" type="button">全局态势</button>
+                  <button class="ph-preset" data-view="cardio" type="button">心脑血管</button>
+                  <button class="ph-preset" data-view="resp" type="button">呼吸慢病</button>
+                </div>
+              </div>
+
+              <div class="ph-graph" id="ph-graph">
+                <svg class="ph-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  <line id="ph-l-trend" x1="50" y1="47" x2="50" y2="12"/>
+                  <line id="ph-l-therapy" x1="50" y1="47" x2="13" y2="47"/>
+                  <line id="ph-l-pop" x1="50" y1="47" x2="87" y2="47"/>
+                  <line id="ph-l-reorder" x1="50" y1="47" x2="50" y2="82"/>
+                </svg>
+
+                <div class="ph-hub">
+                  <span class="ph-hub-k">疾病谱</span>
+                  <span class="ph-hub-disease" id="ph-hub-disease">全疾病谱</span>
+                  <span class="ph-hub-sub" id="ph-hub-sub">5 大治疗领域</span>
+                </div>
+
+                <div class="ph-sat watch" id="ph-sat-trend" style="left:50%;top:10%">
+                  <span class="ph-sat-k">需求趋势</span>
+                  <span class="ph-sat-v" id="ph-v-trend">—</span>
+                </div>
+                <div class="ph-sat" id="ph-sat-therapy" style="left:13%;top:47%">
+                  <span class="ph-sat-k">治疗领域</span>
+                  <span class="ph-sat-v" id="ph-v-therapy">—</span>
+                </div>
+                <div class="ph-sat" id="ph-sat-pop" style="left:87%;top:47%">
+                  <span class="ph-sat-k">核心人群</span>
+                  <span class="ph-sat-v" id="ph-v-pop">—</span>
+                </div>
+                <div class="ph-sat" id="ph-sat-reorder" style="left:50%;top:84%">
+                  <span class="ph-sat-k">复购周期</span>
+                  <span class="ph-sat-v" id="ph-v-reorder">—</span>
+                </div>
+              </div>
+
+              <div class="ph-spectrum" id="ph-spectrum"></div>
+            </div>
+
+            <aside class="ph-detail" id="ph-detail">
+              <div class="ph-detail-head">
+                <span class="ph-detail-disease" id="ph-detail-disease">—</span>
+                <span class="ph-detail-tag" id="ph-detail-tag"></span>
+              </div>
+
+              <div class="ph-block">
+                <span class="ph-block-k">销售 / 处方趋势</span>
+                <div class="ph-mini-wrap"><canvas id="ph-detail-trend"></canvas></div>
+                <span class="ph-mini-note" id="ph-detail-trend-note"></span>
+              </div>
+
+              <div class="ph-block">
+                <span class="ph-block-k">人群构成</span>
+                <div class="ph-pop" id="ph-pop"></div>
+              </div>
+
+              <div class="ph-block">
+                <div class="ph-detail-row"><span class="k">复购周期</span><span class="v" id="ph-detail-reorder">—</span></div>
+                <div class="ph-detail-row"><span class="k">销售额占比</span><span class="v" id="ph-detail-share">—</span></div>
+              </div>
+
+              <div class="ph-block">
+                <span class="ph-block-k">当前需关注事项</span>
+                <div class="ph-risk" id="ph-detail-risk">—</div>
+              </div>
+
+              <div class="ph-block">
+                <span class="ph-block-k">建议动作</span>
+                <div class="ph-actions" id="ph-actions"></div>
+              </div>
+            </aside>
+          </div>
+
+          <!-- L3：证据（12月趋势 / 治疗领域排名 / 区域分层，最多 3 图） -->
+          <div class="ph-evidence">
+            <div class="ph-card">
+              <div class="ph-card-head"><h3>12 个月销售趋势</h3></div>
+              <div class="ph-chart-wrap"><canvas id="ph-trend"></canvas></div>
+              <div class="ph-note" id="ph-trend-note"></div>
+            </div>
+
+            <div class="ph-card">
+              <div class="ph-card-head"><h3>治疗领域销售额排名</h3></div>
+              <div class="ph-rank" id="ph-rank"></div>
+            </div>
+
+            <div class="ph-card">
+              <div class="ph-card-head"><h3>区域销售分层</h3></div>
+              <div class="ph-region" id="ph-region"></div>
+            </div>
+          </div>
+
+          <!-- L4：原始信号（低权重，不含可识别患者信息） -->
+          <div class="ph-raw">
+            <div class="ph-meta">
+              <span class="ph-meta-k">数据覆盖范围 · 更新时间 · 去重说明</span>
+              <span class="ph-meta-v" id="ph-meta-source"></span>
+              <span class="ph-meta-note" id="ph-meta-note"></span>
+            </div>
+            <div class="ph-signals" id="ph-signals"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER STATUS BAR -->
+    <footer class="hud-footer">
+      <div class="footer-left">
+        <span class="label">当前系统节点:</span>
+        <span class="val">Cluster-Node-01 (Lenovo ThinkSystem IIoT Core)</span>
+        <span class="divider">|</span>
+        <span class="label">网关握手延时:</span>
+        <span class="val text-green" id="net-latency">12 ms</span>
+      </div>
+      <div class="footer-center">
+        <span>© 2026 智能制造数据可视化综合实训平台</span>
+      </div>
+      <div class="footer-right">
+        <span class="label">总包数据吞吐:</span>
+        <span class="val" id="packet-counter">14,290 Pkts</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
