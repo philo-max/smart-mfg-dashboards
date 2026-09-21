@@ -1,130 +1,91 @@
-# 智能制造数据可视化综合实训 · Web Dashboard（V2）
+# 智能制造数据可视化综合实训 · Web Dashboard（V3）
 
-Vue 3 + Vite + TypeScript 的大屏基建骨架。三个页签：
+Vue 3 + Vite + TypeScript 的智能制造基建大屏，视觉语言参照《明日方舟》基建界面（RIIC）：
+斜切边角、警示斜纹、三色信号灯、中英双语标签、科技蓝发光。1920×1080 设计稿，等比缩放铺满任意视口。
 
-| 页签 | 定位 | 主题基调 |
+业务与数据模型对齐《联想笔记本 Mini 产线》实训资料与 PLC 点位表（`BC_*数据表.csv`）：
+物料流向为 **线上仓库 → 物流 → AGV(MOMA) → 装配 → 检测 → 物流出库**。
+
+## 基建总览 → 模块下钻
+
+顶层是「基建总览」：五个模块渲染成基建房间（仓库 / 物流 / AGV / 装配 / 检测）+ 中央控制中枢，
+点击房间下钻进入模块详情，返回按钮或点击 Logo 回到总览。AGV 走廊实时显示车队在产线地图上的位置。
+
+| 模块 | 房间 | 核心内容 |
 | --- | --- | --- |
-| 智能制造 | 生产 / 设备 / 物流 | 冷金属 + 信号青 |
-| 产品体验 | 口碑 / 体验 / 人群 | 石墨冷白 + 克制青 |
-| 健康市场 | 市场 / 用药 / 需求 | 暖深石墨 + 灰绿 + 药品琥珀 |
+| 仓库单元 | 仓储站 | 12 工位占用热力图（停留时长着色）、RFID 搜索、三轴机械手位置 |
+| AGV 单元 | 调度站 | 产线地图 + 车队实时位置、任务完成率、低电量预警 |
+| 装配单元 | 制造站 | 生产节拍计时器、人均产出、节拍趋势、返工率超标告警 |
+| 检测单元 | 检测站 | 质量趋势、缺陷分布、孔径公差直方图（Cpk）、能耗×质量联动、**质量日报（导出 Excel / 打印 PDF）** |
+| 物流单元 | 贸易站 | 订单准时交付率、设备 OEE 排行（点击查看故障记录）、运输时间趋势 |
 
-> **当前阶段说明**：本阶段只搭建 **应用壳 + 主题系统 + 动效基建 + 图表实验室**，
-> **不包含任何业务内容**（无 KPI、无图表、无业务文案）。页面内为骨架占位块，
-> 用于验证主题、布局与转场动效。
+## 三条联动链（跨模块因果）
 
----
+1. **物流链**：AGV 阻塞 → 装配缺料 / 节拍超时 → 物料运输超时 → 订单准时率下降
+2. **质量链**：装配机器人故障 → 装配质量漂移 → 检测 NG 增加 → 装配返工率超标
+3. **库存链**：入库堆积 → 工位停留超阈值 → 呆滞告警
+
+总览页的「联动态势」面板把三条链画成节点，当前异常环节高亮；告警中心支持按分类筛选、
+点击直达对应模块并带上焦点对象（AGV 编号 / 库位 / 设备）。
 
 ## 技术栈
 
 - **Vue 3 + Vite + TypeScript** —— 应用框架与构建
-- **Pinia** —— 跨页签唯一状态源（当前页签 / 主题 / 动效降级）
-- **motion-v** —— 声明式 UI 动效（页签转场、分层入场）
-- **GSAP** —— 仅用于主舞台动画，统一封装为 `useGsapTimeline`（自动销毁 + 减少动效降级）
-- **ECharts** —— 正式业务图表（后续业务页使用，本阶段未接入）
+- **Pinia** —— `stores/plant.ts`（模拟数据源，逐 tick 联动推进）+ `stores/ui.ts`（视图导航）
+- **ECharts** —— 全部业务图表，封装于 `components/charts/`
+- **motion-v** —— 总览 ↔ 模块的转场动效
 - **@lucide/vue** —— 图标库
-- **Python + pyecharts** —— 仅用于 `chart-lab/` 图表验证，**不进入 Vue 运行时**
+- **Vitest** —— `src/data/sim/sim.test.ts` 覆盖三条联动链与状态不变量（`npm test`）
 
----
+## 数据层
+
+`src/data/sim/` 是唯一的模拟数据源，可复现（`createRng` 固定种子）：
+
+- `constants.ts` / `types.ts` —— 产线常量与状态类型
+- `init.ts` —— 初始状态生成
+- `step-flow.ts` / `step-quality.ts` —— 物流链、质量链的逐 tick 推进
+- `step.ts` —— 五个单元按物料流向依次结算的总调度
+- `selectors.ts` —— 派生指标（OEE、模块告警等级、房间摘要卡片数据）
+
+`src/data/points.ts` 把模拟状态映射为 PLC 点位快照（点位名/地址取自 `BC_*数据表.csv`），
+各模块的「PLC 点位监视」面板据此渲染；接入 leapiot 平台后，只需替换这一层的取值来源，
+视图与 store 结构不变。
 
 ## 目录结构
 
 ```
 web_dashboard/
 ├── archive/
-│   └── web_dashboard-static-v1/   # V1 静态版归档（保留，不删除）
-├── chart-lab/                     # Python + pyecharts 图表实验室（离线验证）
-│   ├── manufacturing.py           # 制造：订单流与工位瓶颈
-│   ├── product_insight.py         # 3C：体验要素 × 人群
-│   └── health_market.py           # 医药：疾病谱 -> 治疗 -> 人群/区域
-├── public/
-│   └── favicon.svg
+│   ├── web_dashboard-static-v1/   # V1 静态版归档
+│   └── vue-v2-*/                  # V2 三页签骨架归档（产品体验/健康市场页签、旧 TopBar/MainStage）
+├── chart-lab/                     # Python + pyecharts 图表实验室（离线验证，不进入 Vue 运行时）
 ├── src/
-│   ├── app/                       # 应用入口与根组件
-│   │   ├── main.ts
-│   │   └── App.vue
+│   ├── app/                       # 入口与根组件
 │   ├── components/
-│   │   ├── shell/                 # 应用壳：AppShell / TopBar / MainStage
-│   │   ├── charts/                # ECharts 封装（预留）
-│   │   └── motion/                # 动效基建：PageTransition / StaggerReveal
-│   │       ├── PageTransition.vue
-│   │       ├── StaggerReveal.vue
-│   │       └── useGsapTimeline.ts
-│   ├── features/                  # 三个业务页（当前为骨架占位）
-│   │   ├── manufacturing/
-│   │   ├── product-insight/
-│   │   └── health-market/
-│   ├── stores/                    # Pinia 状态
-│   │   └── ui.ts
-│   ├── data/                      # 业务数据（预留）
-│   └── styles/                    # 主题变量与全局样式
-│       ├── tokens.css             # 三套主题变量
-│       ├── base.css
-│       └── transitions.css
+│   │   ├── charts/                # EChart 封装 + 主题令牌（theme.ts）
+│   │   ├── motion/                # PageTransition / StaggerReveal
+│   │   ├── shell/                 # AppShell（缩放舞台）/ TopBar / AlarmToast
+│   │   └── ui/                    # AkPanel / AkModal / AkTabs / StatTile / SignalLight / Sparkline / PointsPanel / EquipmentModal
+│   ├── data/
+│   │   ├── modules.ts             # 五个模块的房间元数据
+│   │   ├── points.ts              # PLC 点位快照
+│   │   └── sim/                   # 模拟数据源（见上）
+│   ├── features/
+│   │   ├── overview/              # 基建总览：RoomCard / HubCard / AgvCorridor / AlarmCenter / LinkagePanel
+│   │   ├── warehouse/ agv/ assembly/ inspection/ logistics/
+│   │   └── module-layout.css      # 五个模块详情页共用的三栏骨架
+│   └── stores/                    # plant.ts（数据）/ ui.ts（导航）
 ├── index.html
 ├── package.json
-├── tsconfig.json
 └── vite.config.ts
 ```
-
----
-
-## 动效规范
-
-- **PageTransition**（`src/components/motion/PageTransition.vue`）
-  页签切换采用「内容退场 → 主题色过渡 → 新页分层进入」，**不是简单淡入淡出**。
-  退场 + 入场合计约 **600ms**（未超出 450–650ms）。
-- **StaggerReveal**（`src/components/motion/StaggerReveal.vue`）
-  子元素按序分层入场，用于卡片 / 指标区块。
-- **useGsapTimeline**（`src/components/motion/useGsapTimeline.ts`）
-  GSAP 时间线封装：基于 `gsap.context()`，组件卸载（切页）时自动 `revert()` 销毁。
-- **约束**
-  - Motion 负责透明度 / 位移 / 布局类动效；GSAP 仅用于主舞台动画；
-  - 禁止无限闪烁、无意义漂浮、满屏扫光；循环动画必须带业务隐喻；
-  - `prefers-reduced-motion: reduce` 时禁用非必要动画（见 `transitions.css`）。
-
----
 
 ## 脚本
 
 ```bash
 npm install        # 安装依赖
 npm run dev        # 本地开发（默认 http://localhost:5173）
-npm run build      # 类型检查 + 生产构建（vue-tsc --noEmit && vite build）
-npm run preview    # 预览构建产物
+npm test           # Vitest：联动链与状态不变量
+npm run build      # 类型检查 + 生产构建
 npm run type-check # 仅类型检查
 ```
-
----
-
-## 图表策略（重要）
-
-- **`chart-lab/`（pyecharts）仅用于实验与验证**：快速试图形形态、配色与数据结构，
-  输出 HTML 到 `chart-lab/output/`，**不嵌入 Vue 应用、不进入生产构建**。
-- **正式页面统一使用 ECharts**（`echarts` 依赖 + `src/components/charts/` 封装），
-  以保证交互能力、按需加载体积与长期可维护性。
-- 原因：pyecharts 生成的是静态 HTML/JS，难以深度响应式与状态联动；ECharts 是运行时可编程图表库，适合与 Vue 组件、Pinia 状态深度集成。
-
-```bash
-# 运行某个实验（需先 pip install pyecharts）
-python chart-lab/manufacturing.py
-```
-
----
-
-## 验收对照（本阶段）
-
-- [x] 三个空页可切换
-- [x] 三套主题清晰可辨
-- [x] Motion 转场可见且不拖沓（450–650ms）
-- [x] GSAP 时间线最小演示 + 切页正确销毁
-- [x] `npm run build` 与类型检查通过
-- [x] 1280×960 下 `scrollHeight <= innerHeight`（单屏不滚动）
-- [x] README 说明 pyecharts 仅实验、正式用 ECharts
-
----
-
-## 归档说明
-
-V1 静态版（`index.html` / `app.js` / `styles.css` / `manufacturing.css` /
-`threec.css` / `pharma.css` 及历史评审截图）已归档至
-`archive/web_dashboard-static-v1/`，**保留不删除**，可作为视觉与交互参考。
