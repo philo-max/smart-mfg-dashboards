@@ -25,6 +25,8 @@ const plant = usePlantStore()
 const ui = useUiStore()
 const fleet = computed(() => plant.state.agv)
 
+/** 路径筛选：点路径卡片 → 地图高亮该路径，车队列表聚焦其上的车辆 */
+const routeFilter = ref<string | null>(null)
 const selectedId = ref<string | null>(null)
 const selected = computed(() => fleet.value.agvs.find((a) => a.id === selectedId.value) ?? null)
 const modalOpen = computed({ get: () => selected.value !== null, set: (v) => { if (!v) selectedId.value = null } })
@@ -116,7 +118,7 @@ const trendOption = computed<EChartsOption>(() => ({
       </AkPanel>
       <AkPanel title="车队与任务队列" en="FLEET · TASK QUEUE" :color="meta.color">
         <ul class="fleet scroll-y">
-          <li v-for="a in fleet.agvs" :key="a.id" :class="{ 'is-selected': a.id === selectedId }">
+          <li v-for="a in fleet.agvs" :key="a.id" :class="{ 'is-selected': a.id === selectedId, 'is-dim': !!routeFilter && a.routeId !== routeFilter }">
             <button type="button" @click="selectedId = a.id">
               <b class="ak-num">{{ a.id }}</b>
               <span class="fleet__status" :class="`is-${a.status}`">{{ STATUS_TEXT[a.status] }}</span>
@@ -135,12 +137,22 @@ const trendOption = computed<EChartsOption>(() => ({
 
     <div class="col col--center center">
       <AkPanel title="产线地图 · AGV 实时位置" en="LINE MAP · LIVE POSITION" :color="meta.color" flush>
-        <template #actions><span class="hint">悬浮 AGV 图标查看设备 ID 与当前任务，点击查看详情</span></template>
-        <AgvMap :agvs="fleet.agvs" :selected="selectedId" @select="selectedId = $event" />
+        <template #actions><span class="hint">悬浮 AGV 图标查看设备 ID 与当前任务，点击查看详情 · 点击下方路径卡片高亮路径</span></template>
+        <AgvMap :agvs="fleet.agvs" :selected="selectedId" :route="routeFilter" @select="selectedId = $event" />
       </AkPanel>
       <AkPanel title="路径数据坐标" en="ROUTE COORDINATES" :color="meta.color">
         <div class="routes">
-          <article v-for="r in routeCards" :key="r.id" class="route" :class="{ 'is-active': r.onRoute > 0 }">
+          <article
+            v-for="r in routeCards"
+            :key="r.id"
+            class="route"
+            :class="{ 'is-active': r.onRoute > 0, 'is-picked': routeFilter === r.id }"
+            role="button"
+            tabindex="0"
+            :aria-pressed="routeFilter === r.id"
+            @click="routeFilter = routeFilter === r.id ? null : r.id"
+            @keydown.enter="routeFilter = routeFilter === r.id ? null : r.id"
+          >
             <header><b class="ak-num">{{ r.id }}</b><span>{{ r.name }}</span></header>
             <dl>
               <div><dt>起点 · {{ r.from }}</dt><dd class="ak-num">({{ r.start.x }}, {{ r.start.y }})</dd></div>
@@ -209,6 +221,7 @@ const trendOption = computed<EChartsOption>(() => ({
   text-align: left;
 }
 
+.fleet li.is-dim { opacity: 0.3; }
 .fleet li.is-selected button { border-color: var(--highlight); background: var(--highlight-soft); }
 .fleet__status { font-size: 11px; color: var(--signal-pos); }
 .fleet__status.is-blocked { color: var(--signal-risk); }
@@ -243,7 +256,10 @@ const trendOption = computed<EChartsOption>(() => ({
   color: var(--text-secondary);
 }
 
+.route { cursor: pointer; }
+.route:hover { background: var(--accent-soft); }
 .route.is-active { border-top-color: var(--room-agv); }
+.route.is-picked { outline: 2px solid var(--highlight); outline-offset: -2px; }
 .route header { display: flex; flex-direction: column; gap: 2px; }
 .route header b { font-size: 16px; color: var(--room-agv); }
 .route header span { color: var(--text-primary); line-height: 1.3; }

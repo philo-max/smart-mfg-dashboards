@@ -116,7 +116,7 @@ const taktOption = computed<EChartsOption>(() => ({
         <div class="grid3">
           <StatTile label="今日产出" :value="asm.produced" />
           <StatTile label="合格" :value="asm.qualified" />
-          <StatTile label="返工" :value="asm.rework" :level="alarming ? 'risk' : 'normal'" />
+          <StatTile label="返工" :value="asm.rework" :level="alarming ? 'risk' : 'normal'" clickable hint="查看 NG 明细" @activate="ui.navigate('inspection', 'ng')" />
         </div>
       </AkPanel>
       <AkPanel title="人均装配产出" en="OUTPUT PER WORKER" :color="meta.color">
@@ -175,7 +175,7 @@ const taktOption = computed<EChartsOption>(() => ({
           <p>滚动返工率已超过 <b>{{ REWORK_THRESHOLD }}%</b> 标准。上游检测单元 NG 回流增多，
             {{ asm.driftTicks > 0 ? '装配质量正处于漂移期，' : '' }}建议排查装配机器人（Alarm_Robot）与拧紧扭矩。</p>
           <div class="alert__act">
-            <button type="button" class="btn btn--ghost" @click="ui.navigate('inspection')">查看检测单元</button>
+            <button type="button" class="btn btn--ghost" @click="ui.navigate('inspection', 'ng')">查看检测 NG 明细</button>
             <button type="button" class="btn" @click="alertOpen = false">确认知晓</button>
           </div>
         </div>

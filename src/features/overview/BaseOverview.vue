@@ -62,12 +62,12 @@ const alarmCounts = computed(() => {
     <aside class="side">
       <AkPanel title="中枢指标" en="CORE KPI">
         <div class="kpis">
-          <StatTile label="计划达成率" :value="plant.kpis.achievement" unit="%" />
-          <StatTile label="产线 OEE" :value="plant.kpis.lineOee" unit="%" :level="plant.kpis.lineOee < 80 ? 'warn' : 'normal'" />
-          <StatTile label="一次合格率" :value="plant.kpis.fpy" unit="%" :level="plant.kpis.fpy < FPY_THRESHOLD ? 'warn' : 'normal'" />
-          <StatTile label="订单准时率" :value="plant.kpis.onTime" unit="%" :level="plant.kpis.onTime < 95 ? 'warn' : 'normal'" />
-          <StatTile label="AGV 完成率" :value="plant.kpis.agvCompletion" unit="%" />
-          <StatTile label="装配返工率" :value="plant.kpis.rework" unit="%" :level="plant.kpis.rework > REWORK_THRESHOLD ? 'risk' : 'normal'" />
+          <StatTile label="计划达成率" :value="plant.kpis.achievement" unit="%" clickable hint="进入装配" @activate="ui.navigate('assembly')" />
+          <StatTile label="产线 OEE" :value="plant.kpis.lineOee" unit="%" :level="plant.kpis.lineOee < 80 ? 'warn' : 'normal'" clickable hint="设备仪表盘" @activate="ui.navigate('logistics')" />
+          <StatTile label="一次合格率" :value="plant.kpis.fpy" unit="%" :level="plant.kpis.fpy < FPY_THRESHOLD ? 'warn' : 'normal'" clickable hint="进入检测" @activate="ui.navigate('inspection')" />
+          <StatTile label="订单准时率" :value="plant.kpis.onTime" unit="%" :level="plant.kpis.onTime < 95 ? 'warn' : 'normal'" clickable hint="进入物流" @activate="ui.navigate('logistics')" />
+          <StatTile label="AGV 完成率" :value="plant.kpis.agvCompletion" unit="%" clickable hint="进入 AGV" @activate="ui.navigate('agv')" />
+          <StatTile label="装配返工率" :value="plant.kpis.rework" unit="%" :level="plant.kpis.rework > REWORK_THRESHOLD ? 'risk' : 'normal'" clickable hint="查看 NG 明细" @activate="ui.navigate('inspection', 'ng')" />
         </div>
       </AkPanel>
       <LinkagePanel />
@@ -134,6 +134,8 @@ const alarmCounts = computed(() => {
   grid-template-rows: repeat(3, 1fr);
   gap: 8px;
 }
+
+.kpis :deep(.stat__hint) { font-size: 10px; }
 
 .kpis :deep(.stat__value) {
   font-size: 24px;

@@ -28,10 +28,18 @@ const selected = computed(() => wh.value.cells.find((c) => c.id === selectedId.v
 const modalOpen = computed({ get: () => selected.value !== null, set: (v) => { if (!v) selectedId.value = null } })
 
 const query = ref('')
+/** 物料类型筛选：A/B/C 计数块 → 热力图与仓位清单同时聚焦 */
+const materialFilter = ref<string | null>(null)
+
+function toggleMaterial(m: string) {
+  materialFilter.value = materialFilter.value === m ? null : m
+}
+
 const visibleCells = computed(() => {
   const q = query.value.trim()
-  if (!q) return wh.value.cells
-  return wh.value.cells.filter((c) => c.item && (c.item.rfid.toUpperCase().includes(q.toUpperCase()) || c.item.name.includes(q)))
+  return wh.value.cells
+    .filter((c) => !materialFilter.value || c.material === materialFilter.value)
+    .filter((c) => !q || (c.item && (c.item.rfid.toUpperCase().includes(q.toUpperCase()) || c.item.name.includes(q))))
 })
 
 onMounted(() => {
@@ -107,7 +115,16 @@ const statusOption = computed<EChartsOption>(() => {
       <AkPanel title="存取料趋势" en="IN / OUT · LAST 30 TICKS" :color="meta.color">
         <div class="grow"><EChart :option="flowOption" /></div>
         <div class="grid3 grid3--tight">
-          <StatTile v-for="m in MATERIAL_TYPES" :key="m" :label="`${m} 料库存`" :en="`Num_${m}`" :value="wh.cells.filter((c) => c.material === m).length" />
+          <StatTile
+            v-for="m in MATERIAL_TYPES"
+            :key="m"
+            :label="`${m} 料库存`"
+            :en="`Num_${m}`"
+            :value="wh.cells.filter((c) => c.material === m).length"
+            clickable
+            :class="{ 'is-picked': materialFilter === m }"
+            @activate="toggleMaterial(m)"
+          />
         </div>
       </AkPanel>
       <AkPanel title="告警监控" en="8 类故障 · ALARM MONITOR" :color="meta.color">
@@ -118,8 +135,11 @@ const statusOption = computed<EChartsOption>(() => {
 
     <div class="col col--center center">
       <AkPanel title="库位占用热力图" en="SLOT HEATMAP · DWELL TIME" :color="meta.color">
-        <template #actions><span class="hint">颜色 = 停留时长，红色为呆滞（≥{{ DWELL_HOT_MIN }} min），点击工位查看工件</span></template>
-        <WarehouseHeatmap :cells="wh.cells" :selected="selectedId" @select="selectedId = $event" />
+        <template #actions>
+          <span v-if="materialFilter" class="hint">仅显示 {{ materialFilter }} 料 · 再次点击计数块取消</span>
+          <span v-else class="hint">颜色 = 停留时长，红色为呆滞（≥{{ DWELL_HOT_MIN }} min），点击工位查看工件</span>
+        </template>
+        <WarehouseHeatmap :cells="wh.cells" :selected="selectedId" :material="materialFilter" @select="selectedId = $event" />
       </AkPanel>
       <AkPanel title="仓位监控 · 工件 RFID 搜索" en="SLOT MONITOR · RFID LOOKUP" :color="meta.color">
         <template #actions><span class="hint ak-num">在库 {{ plant.kpis.inventory }} / 12 · 呆滞 {{ hotCount }}</span></template>

@@ -1,10 +1,11 @@
 import { type Rng, clockText, pad2, round } from './rng'
 import {
   AGV_ROUTES, ASSEMBLY_WORKERS, DEFECT_TYPES, EQUIPMENT, FAULT_CATALOG, INSPECTION_STATIONS,
-  HISTORY_LEN, MATERIAL_TYPES, NOMINAL, RECENT_WINDOW, TAKE_TIME_S, TAKT_TARGET, TOLERANCE_SD,
+  HISTORY_LEN, MATERIAL_TYPES, NG_HISTORY_SEED, NOMINAL, RECENT_WINDOW, TAKE_TIME_S, TAKT_TARGET, TOLERANCE_SD,
   WAREHOUSE_COLS, WAREHOUSE_ROWS, WORKPIECE_NAMES,
 } from './constants'
 import { torqueCurve } from './torque'
+import { makeInspectionRecord } from './record'
 import type {
   AgvState, AssemblyState, Equipment, HourBucket, InspectionState, LogisticsState, OrderBucket,
   PlantState, TraceRecord, WarehouseCell, WarehouseState, WorkpieceRef,
@@ -131,6 +132,12 @@ function initInspection(rng: Rng, now: Date): InspectionState {
       return { name: s.name, total, fail: Math.round(total * (0.002 + rng.next() * 0.006)) }
     }),
     records: [],
+    ngHistory: Array.from({ length: NG_HISTORY_SEED }, (_, i) =>
+      makeInspectionRecord(rng, {
+        now: new Date(now.getTime() - (i + 1) * rng.int(120, 900) * 1000),
+        failRate: 1, forceFail: true, serial: 900000 + i, rfid: nextRfid(),
+      }),
+    ),
     mttr: [
       { time: '03:12', station: '检测位2', desc: 'Alarm_GongWei 连续 3 件孔径超差', minutes: 18 },
       { time: '07:45', station: '检测位3', desc: '视觉光源亮度衰减误判', minutes: 26 },

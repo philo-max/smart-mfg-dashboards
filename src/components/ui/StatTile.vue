@@ -56,6 +56,7 @@ function onKey(e: KeyboardEvent) {
   animation: ak-alarm-pulse 1.4s ease-in-out infinite;
 }
 
+.stat.is-picked { box-shadow: inset 0 0 0 2px var(--highlight); background: var(--highlight-soft); }
 .stat.is-clickable { cursor: pointer; }
 .stat.is-clickable:hover { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
 

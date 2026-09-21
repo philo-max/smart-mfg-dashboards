@@ -230,3 +230,19 @@ describe('演练场景注入', () => {
     expect(moduleLevels(state).assembly).not.toBe('risk')
   })
 })
+
+describe('NG 历史（供交叉筛选）', () => {
+  it('开机就有一批 NG 记录，且全部是不合格并带缺陷类型', () => {
+    const { state } = fresh(31)
+    expect(state.inspection.ngHistory.length).toBeGreaterThanOrEqual(10)
+    expect(state.inspection.ngHistory.every((r) => !r.pass && r.defect !== null)).toBe(true)
+  })
+
+  it('新产生的 NG 进入历史队首，历史有上限', () => {
+    const { rng, state } = fresh(32)
+    state.assembly.driftTicks = 400
+    for (let i = 0; i < 300; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
+    expect(state.inspection.ngHistory.length).toBeLessThanOrEqual(60)
+    expect(state.inspection.ngHistory.length).toBeGreaterThan(16)
+  })
+})

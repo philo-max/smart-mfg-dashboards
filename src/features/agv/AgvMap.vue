@@ -6,7 +6,7 @@ import { C } from '@/components/charts/theme'
 import type { Agv } from '@/data/sim/types'
 
 /** 产线地图：SVG 底图 + 沿路径插值的 AGV 图标；悬浮显示设备 ID 与当前任务 */
-const props = defineProps<{ agvs: Agv[]; selected: string | null }>()
+const props = defineProps<{ agvs: Agv[]; selected: string | null; route?: string | null }>()
 const emit = defineEmits<{ select: [id: string] }>()
 
 const STATUS_TEXT = { running: '运行中', idle: '空闲', charging: '充电中', blocked: '阻塞' } as const
@@ -70,10 +70,10 @@ function track(e: MouseEvent, id: string) {
         :d="`M${r.points.map((p) => `${p.x},${p.y}`).join(' L')}`"
         fill="none"
         :stroke="WORK_LANES.has(r.id) ? C.room.agv : C.dim"
-        stroke-width="2"
+        :stroke-width="route === r.id ? 4 : 2"
         stroke-dasharray="1 8"
         stroke-linecap="round"
-        opacity="0.5"
+        :opacity="!route ? 0.5 : route === r.id ? 1 : 0.12"
       />
       <g v-for="r in AGV_ROUTES.filter((x) => WORK_LANES.has(x.id))" :key="`l-${r.id}`">
         <text :x="r.points[Math.floor(r.points.length / 2)].x + 6" :y="r.points[Math.floor(r.points.length / 2)].y - 6" :fill="C.room.agv" font-size="11" opacity="0.8">{{ r.id }}</text>
@@ -89,7 +89,7 @@ function track(e: MouseEvent, id: string) {
         :key="p.agv.id"
         :transform="`translate(${p.x}, ${p.y})`"
         class="agv-node"
-        :class="{ 'is-blocked': p.agv.status === 'blocked' }"
+        :class="{ 'is-blocked': p.agv.status === 'blocked', 'is-dim': !!route && p.agv.routeId !== route }"
         role="button"
         tabindex="0"
         :aria-label="`${p.agv.id}：${p.agv.task}`"
@@ -133,6 +133,7 @@ function track(e: MouseEvent, id: string) {
 }
 
 .agv-node { cursor: pointer; }
+.agv-node.is-dim { opacity: 0.25; }
 .agv-node.is-blocked circle:first-child { animation: ak-blink 0.8s steps(2) infinite; }
 
 .tip {

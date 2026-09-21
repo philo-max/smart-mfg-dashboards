@@ -7,11 +7,15 @@ import { DWELL_HOT_MIN, WAREHOUSE_COLS, WAREHOUSE_ROWS } from '@/data/sim/consta
 import type { WarehouseCell } from '@/data/sim/types'
 
 /** 库位占用热力图：颜色 = 停留时长；超过呆滞阈值为红色，可点击查看工件 */
-const props = defineProps<{ cells: WarehouseCell[]; selected: string | null }>()
+const props = defineProps<{ cells: WarehouseCell[]; selected: string | null; material?: string | null }>()
 const emit = defineEmits<{ select: [cellId: string] }>()
 
 const EMPTY = -1
 const MAX_DWELL = 240
+
+function matches(c: WarehouseCell): boolean {
+  return !props.material || c.material === props.material
+}
 
 const option = computed<EChartsOption>(() => ({
   tooltip: {
@@ -45,7 +49,7 @@ const option = computed<EChartsOption>(() => ({
   },
   series: [{
     type: 'heatmap',
-    data: props.cells.map((c) => [c.col, c.row, c.item ? Math.min(c.dwellMin, MAX_DWELL) : EMPTY]),
+    data: props.cells.map((c) => [c.col, c.row, c.item && matches(c) ? Math.min(c.dwellMin, MAX_DWELL) : EMPTY]),
     itemStyle: { borderColor: C.bg, borderWidth: 6 },
     label: {
       show: true,

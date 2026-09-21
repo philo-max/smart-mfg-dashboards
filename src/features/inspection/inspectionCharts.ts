@@ -34,16 +34,21 @@ export function trendOption(list: HourBucket[], threshold: number): EChartsOptio
   }
 }
 
-export function defectPieOption(defects: { name: string; value: number }[]): EChartsOption {
+export function defectPieOption(defects: { name: string; value: number }[], selected: string | null = null): EChartsOption {
   return {
     color: [...PALETTE],
     tooltip: { trigger: 'item', backgroundColor: tooltip.backgroundColor, borderColor: C.accent, textStyle: tooltip.textStyle, formatter: '{b}<br/>{c} 件（{d}%）' },
     legend: { orient: 'vertical', right: 4, top: 'middle', textStyle: { color: C.text, fontSize: 12 }, itemWidth: 10, itemHeight: 10 },
-    series: [{ type: 'pie', radius: ['42%', '70%'], center: ['32%', '52%'], roseType: 'radius', itemStyle: { borderColor: C.bg, borderWidth: 2 }, label: { color: C.text, formatter: '{d}%', fontSize: 11 }, data: defects }],
+    series: [{
+      type: 'pie', radius: ['42%', '70%'], center: ['32%', '52%'], roseType: 'radius', itemStyle: { borderColor: C.bg, borderWidth: 2 },
+      label: { color: C.text, formatter: '{d}%', fontSize: 11 }, selectedMode: 'single', selectedOffset: 8,
+      select: { itemStyle: { borderColor: C.highlight, borderWidth: 3 } },
+      data: defects.map((d) => ({ ...d, selected: d.name === selected })),
+    }],
   }
 }
 
-export function stationBarOption(stations: InspectionStation[], threshold: number): EChartsOption {
+export function stationBarOption(stations: InspectionStation[], threshold: number, selected: number | null = null): EChartsOption {
   const rates = stations.map((s) => (s.total ? Math.round(((s.total - s.fail) / s.total) * 10000) / 100 : 100))
   return {
     tooltip: { ...tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -53,7 +58,7 @@ export function stationBarOption(stations: InspectionStation[], threshold: numbe
     series: [{
       type: 'bar', barWidth: 12, showBackground: true, backgroundStyle: { color: 'rgba(255,255,255,0.06)', borderRadius: 6 },
       label: { show: true, position: 'right', color: C.text, formatter: '{c}%' },
-      data: rates.map((v) => ({ value: v, itemStyle: { borderRadius: 6, color: v < threshold ? C.risk : C.room.inspection } })),
+      data: rates.map((v, i) => ({ value: v, itemStyle: { borderRadius: 6, color: i === selected ? C.highlight : v < threshold ? C.risk : C.room.inspection } })),
     }],
   }
 }

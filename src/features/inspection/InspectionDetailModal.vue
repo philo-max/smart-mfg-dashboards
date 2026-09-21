@@ -7,7 +7,7 @@ import { FPY_THRESHOLD } from '@/data/sim/constants'
 import type { HourBucket } from '@/data/sim/types'
 
 /** 点击合格/不合格计数器：近 24 小时逐时明细 */
-const props = defineProps<{ focus: 'pass' | 'fail' | null; hourly: HourBucket[] }>()
+const props = defineProps<{ focus: 'pass' | 'fail' | null; hourly: HourBucket[]; highlight?: string | null }>()
 const emit = defineEmits<{ close: [] }>()
 
 const open = computed({ get: () => props.focus !== null, set: (v) => { if (!v) emit('close') } })
@@ -36,7 +36,7 @@ const rows = computed(() =>
       <table>
         <thead><tr><th>时段</th><th>检测总数</th><th>合格</th><th>不合格</th><th>不合格率</th><th>状态</th></tr></thead>
         <tbody>
-          <tr v-for="r in rows" :key="r.label">
+          <tr v-for="r in rows" :key="r.label" :class="{ 'is-hl': r.label === highlight }">
             <td class="ak-num">{{ r.label }}</td>
             <td class="ak-num">{{ r.total }}</td>
             <td class="ak-num tone-pos">{{ r.pass }}</td>
@@ -53,6 +53,8 @@ const rows = computed(() =>
 <style scoped>
 .chart { height: 290px; flex-shrink: 0; }
 .table { flex: 1; }
+
+tr.is-hl td { background: var(--highlight-soft); color: var(--highlight); }
 
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { padding: 7px 10px; text-align: center; border-bottom: 1px solid var(--border); }

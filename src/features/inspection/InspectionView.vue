@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import type { ECElementEvent } from 'echarts'
 import { FileText } from '@lucide/vue'
 import AkPanel from '@/components/ui/AkPanel.vue'
 import AkTabs from '@/components/ui/AkTabs.vue'
@@ -17,25 +18,68 @@ import { MODULES } from '@/data/modules'
 import { FPY_THRESHOLD, INSPECTION_STATIONS } from '@/data/sim/constants'
 import { equipmentOf, inspectionTotals, lightOf, oeeOf } from '@/data/sim/selectors'
 import { usePlantStore } from '@/stores/plant'
+import { useUiStore } from '@/stores/ui'
 
 const POWER_ALERT_KW = 7.5
 
 const meta = MODULES.inspection
 const plant = usePlantStore()
+const ui = useUiStore()
 const ins = computed(() => plant.state.inspection)
 const totals = computed(() => inspectionTotals(plant.state))
 
 const range = ref<'24h' | '7d'>('24h')
 const filter = ref<'all' | 'fail'>('all')
 const detailFocus = ref<'pass' | 'fail' | null>(null)
+const hourHighlight = ref<string | null>(null)
 const reportOpen = ref(false)
+/** 交叉筛选：缺陷类型 / 检测位（0 起）——饼图、检测位柱、检测位卡片三处联动 */
+const defectFilter = ref<string | null>(null)
+const positionFilter = ref<number | null>(null)
+
+onMounted(() => {
+  if (ui.focus === 'ng') filter.value = 'fail'
+  ui.clearFocus()
+})
+
+function toggleDefect(name: string) {
+  defectFilter.value = defectFilter.value === name ? null : name
+}
+
+function togglePosition(idx: number) {
+  positionFilter.value = positionFilter.value === idx ? null : idx
+}
+
+function clearFilters() {
+  defectFilter.value = null
+  positionFilter.value = null
+}
+
+function onTrendClick(p: ECElementEvent) {
+  if (range.value !== '24h' || typeof p.name !== 'string') return
+  hourHighlight.value = p.name
+  detailFocus.value = 'fail'
+}
+
+function closeDetail() {
+  detailFocus.value = null
+  hourHighlight.value = null
+}
+
+const filtered = computed(() => defectFilter.value !== null || positionFilter.value !== null)
 
 const trend = computed(() => trendOption(range.value === '24h' ? ins.value.hourly : ins.value.daily, FPY_THRESHOLD))
-const pie = computed(() => defectPieOption(ins.value.defects))
-const stations = computed(() => stationBarOption(ins.value.stations, FPY_THRESHOLD))
+const pie = computed(() => defectPieOption(ins.value.defects, defectFilter.value))
+const stations = computed(() => stationBarOption(ins.value.stations, FPY_THRESHOLD, positionFilter.value))
 const tolerance = computed(() => toleranceOption(ins.value.tolerance))
 const energy = computed(() => energyOption(ins.value.hourly, POWER_ALERT_KW))
-const records = computed(() => ins.value.records.filter((r) => filter.value === 'all' || !r.pass).slice(0, 7))
+/** 「全部」看实时流；「仅 NG」与任何交叉筛选都改查更长的 NG 历史，避免筛完是空的 */
+const records = computed(() =>
+  (filter.value === 'all' && !filtered.value ? ins.value.records : ins.value.ngHistory)
+    .filter((r) => defectFilter.value === null || r.defect === defectFilter.value)
+    .filter((r) => positionFilter.value === null || !r.positions[positionFilter.value])
+    .slice(0, 7),
+)
 
 const eq = computed(() => equipmentOf(plant.state, 'inspection'))
 const light = computed(() => lightOf(plant.levels.inspection))
@@ -70,16 +114,23 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
           <StatTile label="异常闭环 MTTR" :value="mttrOf(plant.state)" unit="min" />
         </div>
       </AkPanel>
-      <AkPanel title="缺陷类型分布" en="DEFECT MIX"><EChart :option="pie" /></AkPanel>
-      <AkPanel title="检测位合格率" en="POSITION YIELD"><EChart :option="stations" /></AkPanel>
+      <AkPanel title="缺陷类型分布" en="DEFECT MIX">
+        <template #actions><span class="hint">点击扇区筛选检测记录</span></template>
+        <EChart :option="pie" @click="(p) => p.name && toggleDefect(p.name)" />
+      </AkPanel>
+      <AkPanel title="检测位合格率" en="POSITION YIELD">
+        <template #actions><span class="hint">点击条形筛选该位 NG</span></template>
+        <EChart :option="stations" @click="(p) => togglePosition(p.dataIndex)" />
+      </AkPanel>
     </div>
 
     <div class="col col--center center3">
       <AkPanel title="质量趋势" en="QUALITY TREND · FPY / PPM" :color="meta.color">
         <template #actions>
+          <span class="hint">点击小时查看明细</span>
           <AkTabs v-model="range" :options="[{ value: '24h', label: '近 24 小时' }, { value: '7d', label: '近 7 天' }]" />
         </template>
-        <EChart :option="trend" />
+        <EChart :option="trend" @click="onTrendClick" />
       </AkPanel>
       <AkPanel title="检测工位实时状态" en="STATION LIVE STATUS" :color="meta.color">
         <div class="live">
@@ -95,7 +146,17 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
             </div>
           </div>
           <div class="live__pos">
-            <article v-for="(p, i) in positionCards" :key="p.name" class="pos" :class="{ 'is-ng': !p.ok }">
+            <article
+              v-for="(p, i) in positionCards"
+              :key="p.name"
+              class="pos"
+              :class="{ 'is-ng': !p.ok, 'is-selected': positionFilter === i }"
+              role="button"
+              tabindex="0"
+              :aria-pressed="positionFilter === i"
+              @click="togglePosition(i)"
+              @keydown.enter="togglePosition(i)"
+            >
               <header><b class="ak-num">{{ i + 1 }}</b><span>{{ p.name }}</span></header>
               <p class="pos__item">{{ p.method }} · {{ p.item }}</p>
               <strong class="pos__result">{{ p.ok ? 'OK' : 'NG' }}</strong>
@@ -106,6 +167,9 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
       </AkPanel>
       <AkPanel title="实时检测记录" en="LIVE RECORDS" :color="meta.color">
         <template #actions>
+          <span v-if="defectFilter !== null" class="fchip">缺陷：{{ defectFilter }}</span>
+          <span v-if="positionFilter !== null" class="fchip">检测位 {{ positionFilter + 1 }} NG</span>
+          <button v-if="filtered" type="button" class="fclear" @click="clearFilters">清除筛选 ✕</button>
           <AkTabs v-model="filter" :options="[{ value: 'all', label: '全部' }, { value: 'fail', label: '仅 NG' }]" />
         </template>
         <div class="rec">
@@ -126,6 +190,7 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
             <span :class="{ 'tone-risk': !r.pass }">{{ r.result }}</span>
             <span><b class="tag" :class="r.pass ? 'ok' : 'ng'">{{ r.pass ? '合格' : '不合格' }}</b></span>
           </div>
+          <p v-if="records.length === 0" class="rec__empty">当前筛选条件下暂无记录</p>
         </div>
       </AkPanel>
     </div>
@@ -137,7 +202,7 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
       <PointsPanel unit="inspection" :color="meta.color" />
     </div>
 
-    <InspectionDetailModal :focus="detailFocus" :hourly="ins.hourly" @close="detailFocus = null" />
+    <InspectionDetailModal :focus="detailFocus" :hourly="ins.hourly" :highlight="hourHighlight" @close="closeDetail" />
     <InspectionReportModal v-model:open="reportOpen" />
   </div>
 </template>
@@ -177,7 +242,10 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
   border-top: 3px solid var(--signal-pos);
 }
 
+.pos { cursor: pointer; }
+.pos:hover { background: var(--accent-soft); }
 .pos.is-ng { border-top-color: var(--signal-risk); background: var(--signal-risk-soft); }
+.pos.is-selected { outline: 2px solid var(--highlight); outline-offset: -2px; }
 .pos header { display: flex; align-items: center; gap: 6px; }
 .pos header b { color: var(--room-inspection); font-size: 16px; }
 .pos header span { color: var(--text-primary); }
@@ -193,6 +261,12 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
   grid-template-rows: 1fr 1fr;
   gap: 8px;
 }
+
+.hint { font-size: 12px; color: var(--text-muted); margin-right: 8px; }
+
+.fchip { font-size: 12px; padding: 2px 8px; color: #0a0c0f; background: var(--highlight); font-weight: 700; margin-right: 6px; }
+.fclear { font-size: 12px; margin-right: 8px; background: none; border: 0; color: var(--highlight); text-decoration: underline; }
+.rec__empty { margin: 14px 0; text-align: center; font-size: 13px; color: var(--text-muted); }
 
 .kpis :deep(.stat__value) { font-size: 22px; }
 .kpis :deep(.stat) { padding: 6px 10px; }

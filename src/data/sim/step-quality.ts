@@ -1,12 +1,13 @@
-import { type Rng, clockText, round } from './rng'
+import { type Rng, round } from './rng'
 import {
-  DEFECT_TYPES, INSPECTION_STATIONS, NOMINAL, RECENT_WINDOW, REWORK_THRESHOLD,
-  HISTORY_LEN, TAKE_TIME_S, TAKT_TARGET, TICK_SECONDS, TOLERANCE, TOLERANCE_SD, TORQUE_MAX, TORQUE_MIN,
+  HISTORY_LEN, NG_HISTORY_MAX, NOMINAL, RECENT_WINDOW, REWORK_THRESHOLD, TAKE_TIME_S, TAKT_TARGET,
+  TICK_SECONDS, TOLERANCE_SD, TORQUE_MAX, TORQUE_MIN,
 } from './constants'
 import { torqueCurve, torquePeak } from './torque'
+import { makeInspectionRecord } from './record'
 import { nextRfid } from './init'
 import { canAlarm } from './step-flow'
-import type { AlarmDraft, InspectionRecord, PlantState } from './types'
+import type { AlarmDraft, PlantState } from './types'
 
 const BASE_FAIL_RATE = 0.006
 const DRIFT_FAIL_RATE = 0.12
@@ -16,8 +17,6 @@ const MAX_RECORDS = 40
 const STARVED_OUTPUT_CHANCE = 0.3
 const INSPECTION_ALARM_WINDOW = 10
 const INSPECTION_ALARM_FAILS = 2
-/** 检测位 → 该位置判 NG 时对应的缺陷类型 */
-const POSITION_DEFECT = ['孔位偏移', '孔径超差', '外观划痕', '贴合间隙超标', 'RFID异常'] as const
 
 export function reworkRate(state: PlantState): number {
   const recent = state.assembly.recent
@@ -63,25 +62,6 @@ export function stepAssembly(state: PlantState, rng: Rng, delivered: number, blo
   return result
 }
 
-function makeRecord(rng: Rng, now: Date, failRate: number, serial: number): InspectionRecord {
-  const failed = rng.chance(failRate)
-  const ngIndex = failed ? rng.int(0, INSPECTION_STATIONS.length - 1) : -1
-  const positions = INSPECTION_STATIONS.map((_, i) => i !== ngIndex)
-  const diameter = ngIndex === 1
-    ? NOMINAL + (rng.chance(0.5) ? 1 : -1) * (TOLERANCE + rng.next() * 0.01)
-    : rng.gaussian(NOMINAL + 0.002, TOLERANCE_SD)
-  const defect = failed ? (rng.chance(0.1) ? DEFECT_TYPES[5] : POSITION_DEFECT[ngIndex]) : null
-  return {
-    time: clockText(now),
-    id: `WP${now.getFullYear()}${String(serial).padStart(6, '0')}`,
-    rfid: nextRfid(),
-    positions,
-    result: defect ?? `孔径 Φ${diameter.toFixed(3)} mm`,
-    pass: !failed,
-    defect,
-  }
-}
-
 export interface InspectionStepResult {
   alarms: AlarmDraft[]
   fails: number
@@ -95,7 +75,7 @@ export function stepInspection(state: PlantState, rng: Rng, units: number, now: 
   const failRate = asm.driftTicks > 0 ? DRIFT_FAIL_RATE : BASE_FAIL_RATE
   const hour = ins.hourly[ins.hourly.length - 1]
   for (let i = 0; i < units; i++) {
-    const rec = makeRecord(rng, now, failRate, asm.produced - units + i + 1)
+    const rec = makeInspectionRecord(rng, { now, failRate, serial: asm.produced - units + i + 1, rfid: nextRfid() })
     rec.positions.forEach((ok, idx) => {
       ins.stations[idx].total += 1
       if (!ok) ins.stations[idx].fail += 1
@@ -107,6 +87,7 @@ export function stepInspection(state: PlantState, rng: Rng, units: number, now: 
       asm.qualified += 1
     } else {
       hour.fail += 1
+      ins.ngHistory.unshift(rec)
       result.fails += 1
       asm.rework += 1
       const defect = ins.defects.find((d) => d.name === rec.defect)
@@ -117,6 +98,7 @@ export function stepInspection(state: PlantState, rng: Rng, units: number, now: 
     ins.records.unshift(rec)
   }
   if (ins.records.length > MAX_RECORDS) ins.records.length = MAX_RECORDS
+  if (ins.ngHistory.length > NG_HISTORY_MAX) ins.ngHistory.length = NG_HISTORY_MAX
   if (units > 0) ins.takeTime = round(rng.gaussian(TAKE_TIME_S, 0.5), 1)
 
   const recentFails = ins.records.slice(0, INSPECTION_ALARM_WINDOW).filter((r) => !r.pass).length

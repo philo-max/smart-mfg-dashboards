@@ -22,6 +22,8 @@ export const TORQUE_POINTS = 30
 export const TAKE_TIME_S = 7.2
 export const HISTORY_LEN = 30
 export const TRACE_MAX = 14
+export const NG_HISTORY_MAX = 60
+export const NG_HISTORY_SEED = 16
 
 /** 检测位2：后盖螺丝孔孔径 Φ2.50 ± 0.03 mm */
 export const NOMINAL = 2.5

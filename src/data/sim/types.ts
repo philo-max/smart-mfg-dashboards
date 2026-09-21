@@ -139,6 +139,8 @@ export interface InspectionState {
   defects: { name: string; value: number }[]
   stations: InspectionStation[]
   records: InspectionRecord[]
+  /** 最近的 NG 记录（跨越更长时间），供「仅 NG」与交叉筛选使用 */
+  ngHistory: InspectionRecord[]
   mttr: MttrAlarm[]
   /** 单件检测耗时（s） */
   takeTime: number
