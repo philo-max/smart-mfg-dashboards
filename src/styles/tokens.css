@@ -1,16 +1,15 @@
 /* =========================================================
-   V2 设计令牌 · 三套主题变量
-   - manufacturing : 冷金属 + 信号青（车间/设备/物流）
-   - product-insight: 石墨冷白 + 克制青（产品体验诊断）
-   - health-market : 暖深石墨 + 灰绿 + 药品琥珀（市场/用药需求）
-   红色仅用于明确风险/异常语义，三套主题共用 --signal-risk。
+   V3 设计令牌 · 基建（RIIC）主题
+   - 明日方舟基建设计语言：斜切边角、警示斜纹、中英双语标签、等宽数字
+   - 主色：科技蓝发光；高亮：方舟黄；红色仅用于告警语义
+   - 每个模块（房间）一个标识色 --room-*
    ========================================================= */
 
 :root {
-  /* 与主题无关的尺度/时长令牌 */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --stage-w: 1920px;
+  --stage-h: 1080px;
+
+  --radius-sm: 2px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -18,97 +17,47 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --font-sans: "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  --font-sans: "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-en: "Bahnschrift", "DIN Alternate", "Oswald", "Arial Narrow", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
 
-  /* 页签切换节奏：内容退场 + 主题过渡 + 新页分层进入，合计 450–650ms */
-  --motion-exit: 240ms;
+  --bg-app: #0a0c0f;
+  --bg-panel: rgba(16, 20, 26, 0.88);
+  --bg-panel-2: rgba(26, 32, 40, 0.9);
+  --bg-elevated: #1c232c;
+  --border: #29313b;
+  --border-strong: #3b4652;
+
+  --text-primary: #e9edf1;
+  --text-secondary: #a3adb7;
+  --text-muted: #6b7682;
+
+  --accent: #23c8ff;
+  --accent-strong: #7fe3ff;
+  --accent-soft: rgba(35, 200, 255, 0.12);
+  --accent-line: rgba(35, 200, 255, 0.38);
+  --accent-glow: 0 0 12px rgba(35, 200, 255, 0.55);
+
+  --highlight: #ffd23c;
+  --highlight-soft: rgba(255, 210, 60, 0.14);
+
+  --signal-pos: #47d18c;
+  --signal-warn: #ffb020;
+  --signal-risk: #ff4655;
+  --signal-risk-soft: rgba(255, 70, 85, 0.16);
+
+  --room-hub: #23c8ff;
+  --room-warehouse: #9b7bff;
+  --room-agv: #8bdc3a;
+  --room-assembly: #ffb400;
+  --room-inspection: #ff6f3c;
+  --room-logistics: #3a8dff;
+
+  --grid-line: rgba(35, 200, 255, 0.05);
+  --hazard: repeating-linear-gradient(-45deg, var(--highlight) 0 6px, transparent 6px 12px);
+  --cut: 14px;
+
+  --motion-fast: 180ms;
   --motion-enter: 360ms;
-  --motion-theme: 520ms;
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* ---------- 主题 1 · 智能制造（冷金属青） ---------- */
-:root,
-[data-theme='manufacturing'] {
-  --bg-app: #0c1116;
-  --bg-panel: #141b22;
-  --bg-panel-2: #1b242d;
-  --bg-elevated: #1f2a34;
-  --border: #26333d;
-  --border-strong: #33454f;
-
-  --text-primary: #e6eef2;
-  --text-secondary: #9db0ba;
-  --text-muted: #6c7c86;
-
-  --accent: #38b6c8;
-  --accent-strong: #5fd0e0;
-  --accent-soft: rgba(56, 182, 200, 0.14);
-  --accent-line: rgba(56, 182, 200, 0.32);
-
-  --signal-pos: #4fd18b;
-  --signal-warn: #e2b04a;
-  --signal-neg: #e0e6ea;
-  --signal-risk: #e05252;
-
-  --grid-line: rgba(56, 182, 200, 0.06);
-  --glow: 0 0 0 1px rgba(56, 182, 200, 0.18), 0 12px 30px -18px rgba(56, 182, 200, 0.5);
-  --shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.8);
-}
-
-/* ---------- 主题 2 · 产品体验（石墨冷白克制青） ---------- */
-[data-theme='product-insight'] {
-  --bg-app: #f4f6f8;
-  --bg-panel: #ffffff;
-  --bg-panel-2: #eef1f4;
-  --bg-elevated: #ffffff;
-  --border: #dfe4e9;
-  --border-strong: #c6cfd7;
-
-  --text-primary: #1a2027;
-  --text-secondary: #55606b;
-  --text-muted: #8b96a1;
-
-  --accent: #2b8fa3;
-  --accent-strong: #1f6f80;
-  --accent-soft: rgba(43, 143, 163, 0.12);
-  --accent-line: rgba(43, 143, 163, 0.26);
-
-  --signal-pos: #2f9d63;
-  --signal-warn: #c98b1f;
-  --signal-neg: #55606b;
-  --signal-risk: #c9453f;
-
-  --grid-line: rgba(43, 143, 163, 0.08);
-  --glow: 0 0 0 1px rgba(43, 143, 163, 0.14), 0 12px 30px -22px rgba(31, 111, 128, 0.5);
-  --shadow: 0 14px 34px -26px rgba(26, 32, 39, 0.35);
-}
-
-/* ---------- 主题 3 · 健康市场（暖深石墨 + 灰绿 + 琥珀） ---------- */
-[data-theme='health-market'] {
-  --bg-app: #15140f;
-  --bg-panel: #1f1e18;
-  --bg-panel-2: #292720;
-  --bg-elevated: #302d24;
-  --border: #3a372d;
-  --border-strong: #4c4839;
-
-  --text-primary: #f0ece1;
-  --text-secondary: #b6ab92;
-  --text-muted: #8a8269;
-
-  --accent: #8a9c6b;
-  --accent-strong: #a8ba84;
-  --accent-soft: rgba(138, 156, 107, 0.16);
-  --accent-line: rgba(138, 156, 107, 0.34);
-
-  --signal-pos: #8fb877;
-  --signal-warn: #d8a441;
-  --signal-neg: #c8bfa6;
-  --signal-risk: #cf6a4f;
-
-  --grid-line: rgba(138, 156, 107, 0.07);
-  --glow: 0 0 0 1px rgba(138, 156, 107, 0.2), 0 12px 30px -20px rgba(216, 164, 65, 0.45);
-  --shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.85);
 }

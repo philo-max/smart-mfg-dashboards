@@ -1,5 +1,5 @@
 /* =========================================================
-   V2 全局基础样式 · 单屏大屏（1280x960 不滚动）
+   V3 全局基础样式 · 1920×1080 设计稿，等比缩放铺满视口
    ========================================================= */
 
 *,
@@ -11,12 +11,10 @@
 html,
 body,
 #app {
+  width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-}
-
-html {
   overflow: hidden;
 }
 
@@ -24,16 +22,7 @@ body {
   font-family: var(--font-sans);
   background: var(--bg-app);
   color: var(--text-primary);
-  overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* 主题切换时的底色/字色过渡由 transitions.css 控制 */
-}
-
-#app {
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
 }
 
 h1,
@@ -47,30 +36,61 @@ p {
 button {
   font-family: inherit;
   color: inherit;
+  cursor: pointer;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 2px;
 }
 
-/* 通用面板外壳：业务页复用 */
-.panel {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+input {
+  font-family: inherit;
 }
 
-/* 骨架占位块（本阶段仅演示布局/动效，不含业务数据） */
-.skeleton-frame {
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
+/* 英文副标签：方舟式大写窄体 */
+.ak-en {
+  font-family: var(--font-en);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
   font-size: 12px;
-  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* 数字：窄体等宽 */
+.ak-num {
+  font-family: var(--font-en);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* 斜切边角（右上 + 左下） */
+.ak-cut {
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+}
+
+/* 警示斜纹条 */
+.ak-hazard {
+  background: var(--hazard);
+  opacity: 0.85;
+}
+
+.tone-pos { color: var(--signal-pos); }
+.tone-warn { color: var(--signal-warn); }
+.tone-risk { color: var(--signal-risk); }
+.tone-accent { color: var(--accent); }
+.tone-highlight { color: var(--highlight); }
+
+.scroll-y {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.scroll-y::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scroll-y::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
 }
