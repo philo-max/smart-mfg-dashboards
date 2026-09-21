@@ -1,51 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import AkPanel from '@/components/ui/AkPanel.vue'
-import type { ModuleId } from '@/data/modules'
-import { DWELL_HOT_MIN, FPY_THRESHOLD, REWORK_THRESHOLD, TAKT_TARGET, TRANSPORT_LATE_S } from '@/data/sim/constants'
-import { equipmentOf, inspectionTotals } from '@/data/sim/selectors'
+import { causalChains } from '@/data/sim/chains'
 import { usePlantStore } from '@/stores/plant'
 import { useUiStore } from '@/stores/ui'
 
-interface Step {
-  label: string
-  module: ModuleId
-  active: boolean
-}
-
 const plant = usePlantStore()
 const ui = useUiStore()
-
-const chains = computed<{ name: string; steps: Step[] }[]>(() => {
-  const s = plant.state
-  const lastTransport = s.logistics.transport[s.logistics.transport.length - 1]
-  return [
-    {
-      name: '物流链',
-      steps: [
-        { label: 'AGV 阻塞', module: 'agv', active: s.agv.agvs.some((a) => a.status === 'blocked') },
-        { label: '装配缺料', module: 'assembly', active: s.assembly.taktElapsed > TAKT_TARGET },
-        { label: '运输超时', module: 'logistics', active: lastTransport.seconds > TRANSPORT_LATE_S },
-        { label: '准时率↓', module: 'logistics', active: plant.kpis.onTime < 95 },
-      ],
-    },
-    {
-      name: '质量链',
-      steps: [
-        { label: '机器人故障', module: 'assembly', active: equipmentOf(s, 'assembly').availability < 0.85 || s.assembly.driftTicks > 0 },
-        { label: '检测 NG↑', module: 'inspection', active: inspectionTotals(s).lastHourFpy < FPY_THRESHOLD },
-        { label: '返工超标', module: 'assembly', active: plant.kpis.rework > REWORK_THRESHOLD },
-      ],
-    },
-    {
-      name: '库存链',
-      steps: [
-        { label: '入库堆积', module: 'warehouse', active: plant.kpis.inventory >= 11 },
-        { label: '工位呆滞', module: 'warehouse', active: s.warehouse.cells.some((c) => c.dwellMin >= DWELL_HOT_MIN) },
-      ],
-    },
-  ]
-})
+const chains = computed(() => causalChains(plant.state))
 </script>
 
 <template>
@@ -55,7 +17,7 @@ const chains = computed<{ name: string; steps: Step[] }[]>(() => {
         <span class="chain__name">{{ c.name }}</span>
         <template v-for="(step, i) in c.steps" :key="step.label">
           <span v-if="i > 0" class="chain__arrow" :class="{ 'is-hot': step.active && c.steps[i - 1].active }" aria-hidden="true">›</span>
-          <button type="button" class="chain__step" :class="{ 'is-active': step.active }" @click="ui.navigate(step.module)">
+          <button type="button" class="chain__step" :class="{ 'is-active': step.active }" :title="step.evidence" @click="ui.navigate(step.module)">
             {{ step.label }}
           </button>
         </template>

@@ -4,10 +4,12 @@ import AkPanel from './AkPanel.vue'
 import type { ModuleId } from '@/data/modules'
 import type { AlarmStatus, PlantAlarm } from '@/data/sim/types'
 import { usePlantStore } from '@/stores/plant'
+import { useUiStore } from '@/stores/ui'
 
 /** 本模块事件日志：来自全局告警流，按模块过滤；可就地「处理 → 解决」 */
 const props = defineProps<{ module: ModuleId; color: string }>()
 const plant = usePlantStore()
+const ui = useUiStore()
 
 const STATUS_TEXT: Record<AlarmStatus, string> = { open: '未处理', handling: '处理中', resolved: '已解决' }
 const list = computed(() => plant.alarms.filter((a) => a.module === props.module))
@@ -29,7 +31,10 @@ function advance(a: PlantAlarm) {
         <span class="log__text">{{ a.text }}</span>
         <span class="log__side">
           <em>{{ STATUS_TEXT[a.status] }}</em>
-          <button v-if="a.status !== 'resolved'" type="button" @click="advance(a)">{{ a.status === 'open' ? '处理' : '解决' }}</button>
+          <span class="log__btns">
+            <button type="button" class="log__cause" title="根因溯源" @click="ui.openCause(a.id)">溯源</button>
+            <button v-if="a.status !== 'resolved'" type="button" @click="advance(a)">{{ a.status === 'open' ? '处理' : '解决' }}</button>
+          </span>
         </span>
       </li>
       <li v-if="list.length === 0" class="log__empty">本模块暂无异常事件</li>
@@ -78,6 +83,10 @@ function advance(a: PlantAlarm) {
 .log__side em { font-style: normal; font-size: 11px; color: var(--text-muted); }
 .st-open .log__side em { color: var(--signal-risk); }
 .st-handling .log__side em { color: var(--signal-warn); }
+
+.log__btns { display: flex; gap: 3px; }
+.log__side .log__cause { color: var(--accent); background: none; border: 1px solid var(--accent-line); font-weight: 400; }
+.log__side .log__cause:hover { color: #0a0c0f; background: var(--accent); }
 
 .log__side button {
   font-size: 11px;

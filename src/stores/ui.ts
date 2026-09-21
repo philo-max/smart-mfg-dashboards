@@ -15,6 +15,7 @@ export const useUiStore = defineStore('ui', () => {
   const reducedMotion = ref(false)
   const consoleOpen = ref(false)
   const traceRfid = ref<string | null>(null)
+  const causeAlarmId = ref<number | null>(null)
 
   const activeModule = computed(() => (view.value === 'overview' ? null : MODULES[view.value]))
 
@@ -47,8 +48,16 @@ export const useUiStore = defineStore('ui', () => {
     traceRfid.value = null
   }
 
+  function openCause(alarmId: number) {
+    causeAlarmId.value = alarmId
+  }
+
+  function closeCause() {
+    causeAlarmId.value = null
+  }
+
   return {
-    view, focus, reducedMotion, consoleOpen, traceRfid, activeModule,
-    navigate, back, clearFocus, setReducedMotion, toggleConsole, openTrace, closeTrace,
+    view, focus, reducedMotion, consoleOpen, traceRfid, causeAlarmId, activeModule,
+    navigate, back, clearFocus, setReducedMotion, toggleConsole, openTrace, closeTrace, openCause, closeCause,
   }
 })

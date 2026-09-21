@@ -8,6 +8,7 @@ import StatTile from '@/components/ui/StatTile.vue'
 import PointsPanel from '@/components/ui/PointsPanel.vue'
 import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
+import RfidLink from '@/components/ui/RfidLink.vue'
 import EChart from '@/components/charts/EChart.vue'
 import { C, catAxis, fade, itemTooltip, legend, ring, tooltip, valAxis } from '@/components/charts/theme'
 import WarehouseHeatmap from './WarehouseHeatmap.vue'
@@ -148,21 +149,23 @@ const statusOption = computed<EChartsOption>(() => {
           <input v-model="query" type="search" placeholder="输入 RFID（如 RF01012）或工件名称，实时过滤仓位" aria-label="搜索工件 RFID" />
         </label>
         <div class="slots">
-          <button
+          <div
             v-for="c in visibleCells"
             :key="c.id"
-            type="button"
+            role="button"
+            tabindex="0"
             class="slot"
             :class="{ 'is-empty': !c.item, 'is-hot': c.dwellMin >= DWELL_HOT_MIN, 'is-selected': c.id === selectedId }"
             @click="selectedId = c.id"
+            @keydown.enter="selectedId = c.id"
           >
             <b class="ak-num">{{ c.id }}</b>
             <span class="slot__mat" :class="{ off: !c.material }">{{ c.material ?? '空' }}</span>
             <i class="slot__sensor" :class="{ on: !!c.item }" :title="c.item ? '工件检测：有料' : '工件检测：无料'"></i>
-            <span class="ak-num slot__rfid">{{ c.item?.rfid ?? '—' }}</span>
+            <span class="slot__rfid"><RfidLink v-if="c.item" :rfid="c.item.rfid" bare /><template v-else>—</template></span>
             <span class="slot__name">{{ c.item?.name ?? '空闲' }}</span>
             <span class="ak-num slot__dwell">{{ c.item ? `${c.dwellMin} min` : '' }}</span>
-          </button>
+          </div>
           <p v-if="visibleCells.length === 0" class="slots__empty">线上仓库中未找到匹配工件</p>
         </div>
       </AkPanel>
@@ -192,7 +195,7 @@ const statusOption = computed<EChartsOption>(() => {
         <div><dt>工位</dt><dd>{{ selected.id }}（{{ selected.row + 1 }} 层 第 {{ selected.col + 1 }} 列）</dd></div>
         <div><dt>物料类型</dt><dd>{{ selected.material ?? '—' }}</dd></div>
         <div><dt>工件</dt><dd>{{ selected.item?.name ?? '空闲' }}</dd></div>
-        <div><dt>RFID</dt><dd class="ak-num">{{ selected.item?.rfid ?? '—' }}</dd></div>
+        <div><dt>RFID · 点击追溯全链路</dt><dd><RfidLink v-if="selected.item" :rfid="selected.item.rfid" /><template v-else>—</template></dd></div>
         <div><dt>批次</dt><dd class="ak-num">{{ selected.item?.batch ?? '—' }}</dd></div>
         <div><dt>入库时间</dt><dd class="ak-num">{{ selected.item?.inAt ?? '—' }}</dd></div>
         <div><dt>停留时长</dt><dd class="ak-num" :class="{ 'tone-risk': selected.dwellMin >= DWELL_HOT_MIN }">{{ selected.dwellMin }} min</dd></div>

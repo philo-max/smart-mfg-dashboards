@@ -2,6 +2,7 @@ import type { ModuleId } from '../modules'
 import { type Rng, clockText } from './rng'
 import { DWELL_HOT_MIN, MATERIAL_TYPES } from './constants'
 import { makeWorkpiece } from './init'
+import { logEvent, rememberWorkpiece } from './lineage'
 import { equipmentOf } from './selectors'
 import type { AlarmDraft, PlantState } from './types'
 
@@ -61,6 +62,8 @@ export function injectScenario(state: PlantState, rng: Rng, id: ScenarioId, now:
       empties.forEach((c) => {
         c.material = rng.pick(MATERIAL_TYPES)
         c.item = makeWorkpiece(rng, now)
+        rememberWorkpiece(state, c.item)
+        logEvent(state, c.item.rfid, 0, 'warehouse', `入库 ${c.id}工位（${c.material} 料）`, 'info', clockText(now))
       })
       const targets = wh.cells.filter((c) => c.item).slice(0, JAM_CELLS)
       targets.forEach((c) => { c.dwellMin = DWELL_HOT_MIN + rng.int(5, 60) })

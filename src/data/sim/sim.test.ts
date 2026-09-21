@@ -8,6 +8,8 @@ import { DWELL_HOT_MIN, REWORK_THRESHOLD, TAKT_TARGET, TORQUE_MAX, TORQUE_MIN, T
 import { torqueCurve, torquePeak } from './torque'
 import { moduleLevels } from './selectors'
 import { injectScenario } from './scenarios'
+import { buildTrace } from './lineage'
+import { causalChains, chainIdForAlarm } from './chains'
 
 const NOW = new Date('2026-09-21T10:30:00')
 
@@ -67,7 +69,7 @@ describe('联动链 1：AGV 阻塞 → 装配缺料', () => {
     const { rng, state } = fresh()
     const onTime = state.logistics.ordersOnTime
     const total = state.logistics.ordersTotal
-    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 0, warehousePicks: 0, ordersCompleted: 1, transportSamples: [TRANSPORT_LATE_S + 10], legs: ['R3'] }, NOW)
+    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 0, warehousePicks: 0, ordersCompleted: 1, transportSamples: [TRANSPORT_LATE_S + 10], legs: [{ routeId: 'R3', agvId: 'MOMA-01', seconds: 30 }] }, NOW)
     expect(state.logistics.ordersTotal).toBe(total + 1)
     expect(state.logistics.ordersOnTime).toBe(onTime)
   })
@@ -176,7 +178,7 @@ describe('新增历史序列', () => {
 
   it('延误的 R1 送料在追踪表中标记为延误', () => {
     const { rng, state } = fresh()
-    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 1, warehousePicks: 0, ordersCompleted: 0, transportSamples: [TRANSPORT_LATE_S + 6], legs: ['R1'] }, NOW)
+    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 1, warehousePicks: 0, ordersCompleted: 0, transportSamples: [TRANSPORT_LATE_S + 6], legs: [{ routeId: 'R1', agvId: 'MOMA-01', seconds: TRANSPORT_LATE_S + 6 }] }, NOW)
     expect(state.logistics.trace[0].status).toBe('延误')
   })
 })
@@ -244,5 +246,80 @@ describe('NG 历史（供交叉筛选）', () => {
     for (let i = 0; i < 300; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
     expect(state.inspection.ngHistory.length).toBeLessThanOrEqual(60)
     expect(state.inspection.ngHistory.length).toBeGreaterThan(16)
+  })
+})
+
+describe('工件全链路履历', () => {
+  it('仓库出库的工件会被 AGV 送到装配，履历依次包含 入库 → 出库 → 配送', () => {
+    const { rng, state } = fresh(41)
+    const cell = state.warehouse.cells.find((c) => c.item)!
+    const rfid = cell.item!.rfid
+    stepWarehouse(state, rng, 40, NOW)
+    expect(state.lineage.released).toContain(rfid)
+    stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 1, warehousePicks: 0, ordersCompleted: 0, transportSamples: [26], legs: [{ routeId: 'R1', agvId: 'MOMA-02', seconds: 26 }] }, NOW)
+    const trace = buildTrace(state, state.lineage.released.length ? state.lineage.delivered[state.lineage.delivered.length - 1] : rfid)
+    expect(trace.found).toBe(true)
+    const stages = trace.events.map((e) => e.stage)
+    expect(stages).toEqual([...stages].sort())
+    expect(trace.events.some((e) => e.module === 'agv' && e.text.includes('MOMA-02'))).toBe(true)
+  })
+
+  it('长时间运行后，检测记录里的 RFID 都能追溯出完整的五阶段链路，事件按阶段有序', () => {
+    const { rng, state } = fresh(42)
+    for (let i = 0; i < 120; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
+    const rec = state.inspection.records[0]
+    const trace = buildTrace(state, rec.rfid)
+    expect(trace.found).toBe(true)
+    expect(trace.stages).toHaveLength(5)
+    expect(trace.events.some((e) => e.stage === 0)).toBe(true)
+    expect(trace.events.some((e) => e.stage === 3)).toBe(true)
+    expect(trace.events.filter((e) => e.synthetic).every((e) => e.stage <= 2)).toBe(true)
+    expect(trace.result).toBe(rec.pass ? 'pass' : 'ng')
+  })
+
+  it('NG 工件退回装配返工；未知 RFID 返回未找到', () => {
+    const { state } = fresh(43)
+    const ng = state.inspection.ngHistory[0]
+    const trace = buildTrace(state, ng.rfid)
+    expect(trace.result).toBe('ng')
+    expect(trace.stages[3].status).toBe('fail')
+    expect(buildTrace(state, 'RF99999999').found).toBe(false)
+  })
+
+  it('各流转队列与履历表都有上限', () => {
+    const { rng, state } = fresh(44)
+    for (let i = 0; i < 800; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
+    const ln = state.lineage
+    for (const q of [ln.released, ln.delivered, ln.assembled, ln.finished]) expect(q.length).toBeLessThanOrEqual(60)
+    expect(ln.order.length).toBeLessThanOrEqual(300)
+    expect(Object.keys(ln.events).length).toBe(ln.order.length)
+  })
+})
+
+describe('因果链与根因', () => {
+  it('注入 AGV 阻塞后，物流链第一环点亮并给出阻塞车辆作为证据', () => {
+    const { rng, state } = fresh(51)
+    state.agv.agvs.forEach((a) => { a.status = 'running' })
+    injectScenario(state, rng, 'agv-block', NOW)
+    const flow = causalChains(state).find((c) => c.id === 'flow')!
+    expect(flow.steps[0].active).toBe(true)
+    expect(flow.steps[0].evidence).toMatch(/MOMA-0\d/)
+  })
+
+  it('注入机器人故障后，质量链首环点亮；恢复后所有环节熄灭', () => {
+    const { rng, state } = fresh(52)
+    injectScenario(state, rng, 'robot-fault', NOW)
+    expect(causalChains(state).find((c) => c.id === 'quality')!.steps[0].active).toBe(true)
+    injectScenario(state, rng, 'recover', NOW)
+    const quality = causalChains(state).find((c) => c.id === 'quality')!
+    expect(quality.steps.some((s) => s.active)).toBe(false)
+  })
+
+  it('告警按模块与文案映射到所属因果链', () => {
+    expect(chainIdForAlarm({ module: 'warehouse', text: 'x', category: '生产超差' })).toBe('inventory')
+    expect(chainIdForAlarm({ module: 'inspection', text: 'x', category: '质量异常' })).toBe('quality')
+    expect(chainIdForAlarm({ module: 'agv', text: 'x', category: '物流异常' })).toBe('flow')
+    expect(chainIdForAlarm({ module: 'assembly', text: '装配节拍超时，工位缺料', category: '生产超差' })).toBe('flow')
+    expect(chainIdForAlarm({ module: 'assembly', text: '装配返工率超标', category: '质量异常' })).toBe('quality')
   })
 })

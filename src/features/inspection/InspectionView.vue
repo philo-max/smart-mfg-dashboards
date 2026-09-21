@@ -9,6 +9,7 @@ import PointsPanel from '@/components/ui/PointsPanel.vue'
 import SignalLight from '@/components/ui/SignalLight.vue'
 import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
+import RfidLink from '@/components/ui/RfidLink.vue'
 import EChart from '@/components/charts/EChart.vue'
 import InspectionDetailModal from './InspectionDetailModal.vue'
 import InspectionReportModal from './InspectionReportModal.vue'
@@ -183,7 +184,7 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
           <div v-for="r in records" :key="r.id + r.time" class="rec__row">
             <span class="ak-num">{{ r.time }}</span>
             <span class="ak-num">{{ r.id }}</span>
-            <span class="ak-num">{{ r.rfid }}</span>
+            <RfidLink :rfid="r.rfid" bare />
             <span class="rec__pos">
               <i v-for="(ok, i) in r.positions" :key="i" :class="ok ? 'ok' : 'ng'">{{ ok ? 'OK' : 'NG' }}</i>
             </span>

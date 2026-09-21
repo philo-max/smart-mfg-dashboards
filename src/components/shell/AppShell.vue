@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref, type Component } from 'vue'
 import TopBar from './TopBar.vue'
 import AlarmToast from './AlarmToast.vue'
 import ScenarioConsole from './ScenarioConsole.vue'
+import TraceModal from './TraceModal.vue'
+import CauseModal from './CauseModal.vue'
 import PageTransition from '@/components/motion/PageTransition.vue'
 import BaseOverview from '@/features/overview/BaseOverview.vue'
 import WarehouseView from '@/features/warehouse/WarehouseView.vue'
@@ -79,6 +81,8 @@ onBeforeUnmount(() => {
       </main>
       <AlarmToast />
       <ScenarioConsole />
+      <TraceModal />
+      <CauseModal />
       <div id="ak-overlay"></div>
     </div>
   </div>

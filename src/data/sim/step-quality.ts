@@ -1,10 +1,11 @@
-import { type Rng, round } from './rng'
+import { type Rng, clockText, round } from './rng'
 import {
   HISTORY_LEN, NG_HISTORY_MAX, NOMINAL, RECENT_WINDOW, REWORK_THRESHOLD, TAKE_TIME_S, TAKT_TARGET,
   TICK_SECONDS, TOLERANCE_SD, TORQUE_MAX, TORQUE_MIN,
 } from './constants'
 import { torqueCurve, torquePeak } from './torque'
 import { makeInspectionRecord } from './record'
+import { logEvent } from './lineage'
 import { nextRfid } from './init'
 import { canAlarm } from './step-flow'
 import type { AlarmDraft, PlantState } from './types'
@@ -18,6 +19,13 @@ const STARVED_OUTPUT_CHANCE = 0.3
 const INSPECTION_ALARM_WINDOW = 10
 const INSPECTION_ALARM_FAILS = 2
 
+const QUEUE_MAX = 60
+
+function pushCapped(queue: string[], value: string): void {
+  queue.push(value)
+  if (queue.length > QUEUE_MAX) queue.shift()
+}
+
 export function reworkRate(state: PlantState): number {
   const recent = state.assembly.recent
   return round((recent.reduce((a, v) => a + v, 0) / recent.length) * 100, 2)
@@ -29,7 +37,7 @@ export interface AssemblyStepResult {
 }
 
 /** 装配：AGV 阻塞且本轮无送料 → 缺料，节拍拉长、产出下降（联动链 1） */
-export function stepAssembly(state: PlantState, rng: Rng, delivered: number, blockedAgvs: number): AssemblyStepResult {
+export function stepAssembly(state: PlantState, rng: Rng, delivered: number, blockedAgvs: number, now: Date = new Date()): AssemblyStepResult {
   const result: AssemblyStepResult = { alarms: [], units: 0 }
   const asm = state.assembly
   const starving = blockedAgvs > 0 && delivered === 0
@@ -42,10 +50,15 @@ export function stepAssembly(state: PlantState, rng: Rng, delivered: number, blo
     if (asm.taktHistory.length > TAKT_HISTORY_LEN) asm.taktHistory.shift()
     asm.taktElapsed = 0
     asm.nextCycle = Math.max(TICK_SECONDS * 7, Math.round(rng.gaussian(TAKT_TARGET - 2, 1) / TICK_SECONDS) * TICK_SECONDS)
-    asm.currentRfid = nextRfid()
+    const finishedRfid = asm.currentRfid
     asm.torque = torqueCurve(rng, asm.driftTicks > 0)
     const peak = torquePeak(asm.torque)
-    if ((peak > TORQUE_MAX || peak < TORQUE_MIN) && canAlarm(state, 'torque', 10)) {
+    const outOfWindow = peak > TORQUE_MAX || peak < TORQUE_MIN
+    logEvent(state, finishedRfid, 2, 'assembly', `装配完成，节拍 ${asm.lastTakt}s，扭矩峰值 ${peak.toFixed(2)} N·m${outOfWindow ? '（超出工艺窗口）' : ''}`, outOfWindow ? 'warn' : 'ok', clockText(now))
+    pushCapped(state.lineage.assembled, finishedRfid)
+    asm.currentRfid = state.lineage.delivered.shift() ?? nextRfid()
+    logEvent(state, asm.currentRfid, 2, 'assembly', '开始装配', 'info', clockText(now))
+    if (outOfWindow && canAlarm(state, 'torque', 10)) {
       result.alarms.push({
         module: 'assembly', level: 'warn', category: '生产超差',
         text: `拧紧扭矩峰值 ${peak.toFixed(2)} N·m 超出 ${TORQUE_MIN}–${TORQUE_MAX} N·m 工艺窗口`,
@@ -75,7 +88,9 @@ export function stepInspection(state: PlantState, rng: Rng, units: number, now: 
   const failRate = asm.driftTicks > 0 ? DRIFT_FAIL_RATE : BASE_FAIL_RATE
   const hour = ins.hourly[ins.hourly.length - 1]
   for (let i = 0; i < units; i++) {
-    const rec = makeInspectionRecord(rng, { now, failRate, serial: asm.produced - units + i + 1, rfid: nextRfid() })
+    const rfid = state.lineage.assembled.shift() ?? nextRfid()
+    const rec = makeInspectionRecord(rng, { now, failRate, serial: asm.produced - units + i + 1, rfid })
+    const time = clockText(now)
     rec.positions.forEach((ok, idx) => {
       ins.stations[idx].total += 1
       if (!ok) ins.stations[idx].fail += 1
@@ -85,7 +100,12 @@ export function stepInspection(state: PlantState, rng: Rng, units: number, now: 
     if (rec.pass) {
       hour.pass += 1
       asm.qualified += 1
+      logEvent(state, rfid, 3, 'inspection', '检测合格（5 个检测位全部 OK）', 'ok', time)
+      pushCapped(state.lineage.finished, rfid)
     } else {
+      logEvent(state, rfid, 3, 'inspection', `检测不合格：${rec.defect}（检测位 ${rec.positions.indexOf(false) + 1} NG）`, 'risk', time)
+      logEvent(state, rfid, 2, 'assembly', '退回装配返工', 'warn', time)
+      pushCapped(state.lineage.assembled, rfid)
       hour.fail += 1
       ins.ngHistory.unshift(rec)
       result.fails += 1

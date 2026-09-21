@@ -6,6 +6,7 @@ import {
 } from './constants'
 import { torqueCurve } from './torque'
 import { makeInspectionRecord } from './record'
+import { initLineage } from './lineage'
 import type {
   AgvState, AssemblyState, Equipment, HourBucket, InspectionState, LogisticsState, OrderBucket,
   PlantState, TraceRecord, WarehouseCell, WarehouseState, WorkpieceRef,
@@ -194,9 +195,11 @@ function initLogistics(rng: Rng, now: Date): LogisticsState {
 }
 
 export function createPlant(rng: Rng, now: Date = new Date()): PlantState {
+  const warehouse = initWarehouse(rng, now)
   return {
     tick: 0,
-    warehouse: initWarehouse(rng, now),
+    warehouse,
+    lineage: initLineage(warehouse.cells),
     agv: initAgv(rng),
     assembly: initAssembly(rng),
     inspection: initInspection(rng, now),

@@ -4,7 +4,8 @@ import {
   HISTORY_LEN, TICK_SECONDS, TRACE_MAX, TRANSPORT_LATE_S, WORKPIECE_NAMES, WORK_ROUTES,
 } from './constants'
 import { makeWorkpiece, nextRfid, taskName } from './init'
-import type { AlarmDraft, Agv, PlantState } from './types'
+import { logEvent, rememberWorkpiece } from './lineage'
+import type { AlarmDraft, Agv, AgvLeg, PlantState } from './types'
 
 const AGV_BLOCK_CHANCE = 0.01
 const AGV_BATTERY_DRAIN = 0.5
@@ -22,6 +23,12 @@ const AVAILABILITY_RECOVERY = 0.003
 const AVAILABILITY_CEIL = 0.95
 const TRANSPORT_WINDOW = 30
 const FAULT_LOG_MAX = 40
+const QUEUE_MAX = 60
+
+function pushCapped(queue: string[], value: string): void {
+  queue.push(value)
+  if (queue.length > QUEUE_MAX) queue.shift()
+}
 
 export function canAlarm(state: PlantState, key: string, cooldownTicks: number): boolean {
   const until = state.cooldowns[key] ?? -1
@@ -36,8 +43,8 @@ export interface AgvStepResult {
   warehousePicks: number
   ordersCompleted: number
   transportSamples: number[]
-  /** 本 tick 完成的路段（路径 ID），供物流追踪表使用 */
-  legs: string[]
+  /** 本 tick 完成的路段，供物流追踪表与工件履历使用 */
+  legs: AgvLeg[]
 }
 
 function routeName(id: string): string {
@@ -54,7 +61,7 @@ function assign(agv: Agv, routeId: string, rng: Rng, state: PlantState, result: 
 }
 
 function completeLeg(agv: Agv, rng: Rng, state: PlantState, result: AgvStepResult) {
-  result.legs.push(agv.routeId)
+  result.legs.push({ routeId: agv.routeId, agvId: agv.id, seconds: agv.legTicks * TICK_SECONDS })
   if ((WORK_ROUTES as readonly string[]).includes(agv.routeId)) state.agv.tasksDone += 1
   switch (agv.routeId) {
     case 'R1':
@@ -113,7 +120,7 @@ export function stepAgv(state: PlantState, rng: Rng): AgvStepResult {
     agv.progress += agv.speed
     if (agv.progress >= 1) completeLeg(agv, rng, state, result)
   }
-  const workLegs = result.legs.filter((id) => (WORK_ROUTES as readonly string[]).includes(id)).length
+  const workLegs = result.legs.filter((l) => (WORK_ROUTES as readonly string[]).includes(l.routeId)).length
   state.agv.history.push({ done: workLegs, blocked: state.agv.agvs.filter((a) => a.status === 'blocked').length })
   if (state.agv.history.length > HISTORY_LEN) state.agv.history.shift()
   return result
@@ -138,6 +145,8 @@ export function stepWarehouse(state: PlantState, rng: Rng, picks: number, now: D
     cell.material = rng.pick(MATERIAL_TYPES)
     cell.item = makeWorkpiece(rng, now)
     cell.dwellMin = 0
+    rememberWorkpiece(state, cell.item)
+    logEvent(state, cell.item.rfid, 0, 'warehouse', `入库 ${cell.id}工位（${cell.material} 料）`, 'info', clockText(now))
     wh.inboundToday += 1
     wh.autoStore += 1
     inCount += 1
@@ -147,6 +156,11 @@ export function stepWarehouse(state: PlantState, rng: Rng, picks: number, now: D
     const filled = wh.cells.filter((c) => c.item)
     if (filled.length === 0) break
     const cell = rng.pick(filled)
+    const released = cell.item
+    if (released) {
+      logEvent(state, released.rfid, 0, 'warehouse', `出库 ${cell.id}工位，停留 ${cell.dwellMin} 分钟`, cell.dwellMin >= DWELL_HOT_MIN ? 'warn' : 'info', clockText(now))
+      pushCapped(state.lineage.released, released.rfid)
+    }
     cell.item = null
     cell.material = null
     cell.dwellMin = 0
@@ -187,12 +201,25 @@ export function stepLogistics(state: PlantState, rng: Rng, agv: AgvStepResult, n
       bucket.onTime += 1
     }
   }
-  let sampleIdx = 0
-  for (const routeId of agv.legs) {
-    const route = AGV_ROUTES.find((r) => r.id === routeId)
-    if (!route || !(WORK_ROUTES as readonly string[]).includes(routeId)) continue
-    const late = routeId === 'R1' && (agv.transportSamples[sampleIdx++] ?? 0) > TRANSPORT_LATE_S
-    lg.trace.unshift({ time: clockText(now), rfid: nextRfid(), name: rng.pick(WORKPIECE_NAMES), from: route.from, to: route.to, status: late ? '延误' : '完成' })
+  const ln = state.lineage
+  for (const leg of agv.legs) {
+    const route = AGV_ROUTES.find((r) => r.id === leg.routeId)
+    if (!route || !(WORK_ROUTES as readonly string[]).includes(leg.routeId)) continue
+    const time = clockText(now)
+    const late = leg.routeId === 'R1' && leg.seconds > TRANSPORT_LATE_S
+    let rfid: string
+    if (leg.routeId === 'R1') {
+      rfid = ln.released.shift() ?? nextRfid()
+      pushCapped(ln.delivered, rfid)
+      logEvent(state, rfid, 1, 'agv', `${leg.agvId} 配送 ${route.from} → ${route.to}，耗时 ${leg.seconds}s${late ? '（超过交付红线）' : ''}`, late ? 'warn' : 'ok', time)
+    } else if (leg.routeId === 'R2') {
+      rfid = ln.assembled[0] ?? nextRfid()
+      logEvent(state, rfid, 2, 'agv', `${leg.agvId} 送检 ${route.from} → ${route.to}`, 'info', time)
+    } else {
+      rfid = ln.finished.shift() ?? nextRfid()
+      logEvent(state, rfid, 4, 'logistics', `${leg.agvId} 回库 ${route.from} → ${route.to}，订单完成`, 'ok', time)
+    }
+    lg.trace.unshift({ time, rfid, name: ln.meta[rfid]?.name ?? rng.pick(WORKPIECE_NAMES), from: route.from, to: route.to, status: late ? '延误' : '完成' })
   }
   if (lg.trace.length > TRACE_MAX) lg.trace.length = TRACE_MAX
   for (const eq of lg.equipment) {

@@ -8,6 +8,7 @@ import StatTile from '@/components/ui/StatTile.vue'
 import PointsPanel from '@/components/ui/PointsPanel.vue'
 import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
+import RfidLink from '@/components/ui/RfidLink.vue'
 import EChart from '@/components/charts/EChart.vue'
 import { C, catAxis, fade, gauge, ring, tooltip, valAxis } from '@/components/charts/theme'
 import { MODULES } from '@/data/modules'
@@ -139,7 +140,7 @@ const taktOption = computed<EChartsOption>(() => ({
               <li v-for="(s, i) in STAGES" :key="s" :class="{ done: i < stageIndex, active: i === stageIndex }">{{ s }}</li>
             </ol>
             <dl class="takt__meta">
-              <div><dt>当前 RFID</dt><dd class="ak-num">{{ asm.currentRfid }}</dd></div>
+              <div><dt>当前 RFID</dt><dd><RfidLink :rfid="asm.currentRfid" /></dd></div>
               <div><dt>上一节拍</dt><dd class="ak-num" :class="{ 'tone-risk': asm.lastTakt > TAKT_TARGET + 4 }">{{ asm.lastTakt.toFixed(1) }}s</dd></div>
               <div><dt>返工率（滚动）</dt><dd class="ak-num" :class="{ 'tone-risk': alarming }">{{ rework }}%</dd></div>
             </dl>

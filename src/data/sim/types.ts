@@ -67,6 +67,12 @@ export interface Agv {
   legTicks: number
 }
 
+export interface AgvLeg {
+  routeId: string
+  agvId: string
+  seconds: number
+}
+
 export interface AgvState {
   agvs: Agv[]
   tasksDone: number
@@ -204,6 +210,49 @@ export interface PlantAlarm {
   focus?: string
 }
 
+/** 工件履历阶段：0 仓库 · 1 AGV 配送 · 2 装配（含送检、返工）· 3 检测 · 4 合格回库 */
+export type LineageStage = 0 | 1 | 2 | 3 | 4
+
+export interface LineageEvent {
+  time: string
+  stage: LineageStage
+  module: ModuleId
+  text: string
+  level: 'info' | 'ok' | 'warn' | 'risk'
+  /** 上游历史由 RFID 派生合成（历史归档），不是本次会话中真实发生的 */
+  synthetic?: boolean
+}
+
+/** 工件在各单元间流转的队列 + 每个 RFID 的事件履历 */
+export interface LineageState {
+  released: string[]
+  delivered: string[]
+  assembled: string[]
+  finished: string[]
+  events: Record<string, LineageEvent[]>
+  order: string[]
+  meta: Record<string, { name: string; batch: string }>
+}
+
+export interface TraceStageView {
+  key: 'warehouse' | 'agv' | 'assembly' | 'inspection' | 'return'
+  label: string
+  module: ModuleId
+  status: 'done' | 'current' | 'pending' | 'fail'
+}
+
+export interface TraceView {
+  rfid: string
+  found: boolean
+  name: string
+  batch: string
+  events: LineageEvent[]
+  stages: TraceStageView[]
+  location: string
+  result: 'pass' | 'ng' | 'wip'
+  focus: { module: ModuleId; focus: string | null } | null
+}
+
 export interface PlantState {
   tick: number
   warehouse: WarehouseState
@@ -211,6 +260,7 @@ export interface PlantState {
   assembly: AssemblyState
   inspection: InspectionState
   logistics: LogisticsState
+  lineage: LineageState
   cooldowns: Record<string, number>
 }
 

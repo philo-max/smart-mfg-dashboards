@@ -54,9 +54,12 @@ function advance(alarm: PlantAlarm) {
         </button>
         <div class="alarm__side">
           <span class="alarm__status">{{ STATUS_TEXT[a.status] }}</span>
-          <button v-if="a.status !== 'resolved'" type="button" class="alarm__act" @click="advance(a)">
-            {{ a.status === 'open' ? '处理' : '解决' }}
-          </button>
+          <span class="alarm__btns">
+            <button type="button" class="alarm__cause" title="根因溯源" @click="ui.openCause(a.id)">溯源</button>
+            <button v-if="a.status !== 'resolved'" type="button" class="alarm__act" @click="advance(a)">
+              {{ a.status === 'open' ? '处理' : '解决' }}
+            </button>
+          </span>
         </div>
       </li>
       <li v-if="list.length === 0" class="alarms__empty">暂无告警</li>
@@ -164,6 +167,18 @@ function advance(alarm: PlantAlarm) {
 .alarm__status { color: var(--text-muted); white-space: nowrap; }
 .st-open .alarm__status { color: var(--signal-risk); }
 .st-handling .alarm__status { color: var(--signal-warn); }
+
+.alarm__btns { display: flex; gap: 4px; }
+
+.alarm__cause {
+  font-size: 12px;
+  padding: 2px 8px;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent-line);
+}
+
+.alarm__cause:hover { color: #0a0c0f; background: var(--accent); }
 
 .alarm__act {
   font-size: 12px;

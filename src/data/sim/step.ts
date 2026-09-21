@@ -35,7 +35,7 @@ export function stepPlant(state: PlantState, rng: Rng, now: Date = new Date()): 
     state.assembly.driftTicks = Math.max(state.assembly.driftTicks, rng.int(20, 30))
   }
   const warehouseAlarms = stepWarehouse(state, rng, agv.warehousePicks, now)
-  const assembly = stepAssembly(state, rng, agv.deliveredToAssembly, blocked)
+  const assembly = stepAssembly(state, rng, agv.deliveredToAssembly, blocked, now)
   const inspection = stepInspection(state, rng, assembly.units, now)
 
   return [...agv.alarms, ...logistics.alarms, ...warehouseAlarms, ...assembly.alarms, ...inspection.alarms]

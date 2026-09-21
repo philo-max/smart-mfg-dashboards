@@ -7,6 +7,7 @@ import PointsPanel from '@/components/ui/PointsPanel.vue'
 import EquipmentModal from '@/components/ui/EquipmentModal.vue'
 import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
+import RfidLink from '@/components/ui/RfidLink.vue'
 import EChart from '@/components/charts/EChart.vue'
 import { C, catAxis, fade, miniGauge, ring, tooltip, valAxis } from '@/components/charts/theme'
 import { MODULES } from '@/data/modules'
@@ -111,7 +112,7 @@ const transportOption = computed<EChartsOption>(() => ({
           <div class="trace__row trace__row--head"><span>时间</span><span>RFID</span><span>工件</span><span>流转路径</span><span>状态</span></div>
           <div v-for="t in lg.trace" :key="t.rfid + t.time" class="trace__row">
             <span class="ak-num">{{ t.time }}</span>
-            <span class="ak-num">{{ t.rfid }}</span>
+            <RfidLink :rfid="t.rfid" bare />
             <span>{{ t.name }}</span>
             <span>{{ t.from }} → {{ t.to }}</span>
             <span><b class="tag" :class="t.status === '延误' ? 'late' : 'ok'">{{ t.status }}</b></span>
