@@ -7,6 +7,7 @@ import { reworkRate, stepAssembly, stepInspection } from './step-quality'
 import { DWELL_HOT_MIN, REWORK_THRESHOLD, TAKT_TARGET, TORQUE_MAX, TORQUE_MIN, TRANSPORT_LATE_S } from './constants'
 import { torqueCurve, torquePeak } from './torque'
 import { moduleLevels } from './selectors'
+import { injectScenario } from './scenarios'
 
 const NOW = new Date('2026-09-21T10:30:00')
 
@@ -177,5 +178,55 @@ describe('新增历史序列', () => {
     const { rng, state } = fresh()
     stepLogistics(state, rng, { alarms: [], deliveredToAssembly: 1, warehousePicks: 0, ordersCompleted: 0, transportSamples: [TRANSPORT_LATE_S + 6], legs: ['R1'] }, NOW)
     expect(state.logistics.trace[0].status).toBe('延误')
+  })
+})
+
+describe('演练场景注入', () => {
+  it('AGV 阻塞：两台被阻塞，并产生带演练前缀的紧急告警', () => {
+    const { rng, state } = fresh(21)
+    state.agv.agvs.forEach((a) => { a.status = 'running' })
+    const alarms = injectScenario(state, rng, 'agv-block', NOW)
+    expect(state.agv.agvs.filter((a) => a.status === 'blocked')).toHaveLength(2)
+    expect(alarms).toHaveLength(2)
+    expect(alarms.every((a) => a.level === 'risk' && a.text.startsWith('【演练】'))).toBe(true)
+    expect(moduleLevels(state).agv).toBe('risk')
+  })
+
+  it('装配机器人故障：进入漂移期，随后检测 NG 明显增加并使返工率超标', () => {
+    const { rng, state } = fresh(22)
+    injectScenario(state, rng, 'robot-fault', NOW)
+    expect(state.assembly.driftTicks).toBeGreaterThan(0)
+    const before = state.inspection.hourly[state.inspection.hourly.length - 1].fail
+    for (let i = 0; i < 40; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
+    const after = state.inspection.hourly.reduce((a, h) => a + h.fail, 0)
+    expect(after).toBeGreaterThan(before)
+    expect(reworkRate(state)).toBeGreaterThan(REWORK_THRESHOLD)
+  })
+
+  it('库存积压：至少 4 个工位越过呆滞阈值，仓库进入预警', () => {
+    const { rng, state } = fresh(23)
+    injectScenario(state, rng, 'inventory-jam', NOW)
+    expect(state.warehouse.cells.filter((c) => c.dwellMin >= DWELL_HOT_MIN).length).toBeGreaterThanOrEqual(4)
+    expect(moduleLevels(state).warehouse).toBe('warn')
+  })
+
+  it('低电量：两台 AGV 电量跌破 20%', () => {
+    const { rng, state } = fresh(24)
+    state.agv.agvs.forEach((a) => { a.status = 'running'; a.battery = 80 })
+    injectScenario(state, rng, 'low-battery', NOW)
+    expect(state.agv.agvs.filter((a) => a.battery < 20)).toHaveLength(2)
+  })
+
+  it('一键恢复：清除阻塞、漂移与返工窗口，装配和 AGV 回到非风险状态', () => {
+    const { rng, state } = fresh(25)
+    state.agv.agvs.forEach((a) => { a.status = 'running' })
+    injectScenario(state, rng, 'agv-block', NOW)
+    injectScenario(state, rng, 'robot-fault', NOW)
+    for (let i = 0; i < 40; i++) stepPlant(state, rng, new Date(NOW.getTime() + i * 2000))
+    injectScenario(state, rng, 'recover', NOW)
+    expect(state.assembly.driftTicks).toBe(0)
+    expect(state.agv.agvs.some((a) => a.status === 'blocked')).toBe(false)
+    expect(reworkRate(state)).toBe(0)
+    expect(moduleLevels(state).assembly).not.toBe('risk')
   })
 })

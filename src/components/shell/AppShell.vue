@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, type Component } from 'vue'
 import TopBar from './TopBar.vue'
 import AlarmToast from './AlarmToast.vue'
+import ScenarioConsole from './ScenarioConsole.vue'
 import PageTransition from '@/components/motion/PageTransition.vue'
 import BaseOverview from '@/features/overview/BaseOverview.vue'
 import WarehouseView from '@/features/warehouse/WarehouseView.vue'
@@ -9,6 +10,8 @@ import AgvView from '@/features/agv/AgvView.vue'
 import AssemblyView from '@/features/assembly/AssemblyView.vue'
 import InspectionView from '@/features/inspection/InspectionView.vue'
 import LogisticsView from '@/features/logistics/LogisticsView.vue'
+import { MODULE_ORDER } from '@/data/modules'
+import { usePlantStore } from '@/stores/plant'
 import { useUiStore, type ViewId } from '@/stores/ui'
 
 const DESIGN_W = 1920
@@ -24,6 +27,7 @@ const VIEWS: Record<ViewId, Component> = {
 }
 
 const ui = useUiStore()
+const plant = usePlantStore()
 const scale = ref(1)
 const viewport = ref<HTMLDivElement | null>(null)
 const activeView = computed(() => VIEWS[ui.view])
@@ -35,15 +39,31 @@ function fit() {
   scale.value = Math.min(el.clientWidth / DESIGN_W, el.clientHeight / DESIGN_H)
 }
 
+/** 快捷键：0 总览 · 1–5 模块 · 空格 暂停 · S 演练台；输入框内与弹窗打开时不响应 */
+function onKey(e: KeyboardEvent) {
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  if (document.querySelector('#ak-overlay .ak-modal-mask')) return
+  if (e.key === '0') ui.back()
+  else if (e.key >= '1' && e.key <= '5') ui.navigate(MODULE_ORDER[Number(e.key) - 1])
+  else if (e.key === ' ') {
+    e.preventDefault()
+    plant.togglePause()
+  } else if (e.key.toLowerCase() === 's') ui.toggleConsole()
+}
+
 onMounted(() => {
   fit()
   observer = new ResizeObserver(fit)
   if (viewport.value) observer.observe(viewport.value)
+  window.addEventListener('keydown', onKey)
 })
 
 onBeforeUnmount(() => {
   observer?.disconnect()
   observer = null
+  window.removeEventListener('keydown', onKey)
 })
 </script>
 
@@ -58,6 +78,7 @@ onBeforeUnmount(() => {
         </PageTransition>
       </main>
       <AlarmToast />
+      <ScenarioConsole />
       <div id="ak-overlay"></div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Activity, Bell, ChevronLeft, Gauge, House, Package, ShieldCheck } from '@lucide/vue'
+import { Activity, Bell, ChevronLeft, FlaskConical, Gauge, House, Package, Pause, ShieldCheck } from '@lucide/vue'
 import { HUB_META } from '@/data/modules'
 import { usePlantStore } from '@/stores/plant'
 import { useUiStore } from '@/stores/ui'
@@ -36,6 +36,11 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
     </div>
 
     <div class="top__res">
+      <span v-if="plant.paused" class="chip chip--pause"><Pause :size="13" />已暂停</span>
+      <span v-else-if="plant.speed > 1" class="chip chip--speed ak-num">{{ plant.speed }}× 倍速</span>
+      <button type="button" class="drill" :class="{ 'is-open': ui.consoleOpen }" :aria-pressed="ui.consoleOpen" @click="ui.toggleConsole()">
+        <FlaskConical :size="16" />演练台
+      </button>
       <div class="res"><Package :size="16" /><span class="res__label">今日产出</span><b class="ak-num">{{ plant.kpis.produced }}<i>/{{ plant.kpis.plan }}</i></b></div>
       <div class="res"><Gauge :size="16" /><span class="res__label">产线 OEE</span><b class="ak-num">{{ plant.kpis.lineOee }}%</b></div>
       <div class="res"><ShieldCheck :size="16" /><span class="res__label">FPY</span><b class="ak-num">{{ plant.kpis.fpy }}%</b></div>
@@ -156,6 +161,35 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
 }
 
 .res__label { font-size: 12px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0a0c0f;
+  background: var(--highlight);
+}
+
+.chip--speed { background: var(--accent); }
+
+.drill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--highlight);
+  background: rgba(255, 210, 60, 0.08);
+  border: 1px solid rgba(255, 210, 60, 0.45);
+}
+
+.drill:hover, .drill.is-open { color: #0a0c0f; background: var(--highlight); border-color: var(--highlight); }
 
 .res b {
   font-size: 19px;
