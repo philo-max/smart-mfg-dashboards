@@ -25,9 +25,27 @@ withDefaults(defineProps<{ title: string; en?: string; color?: string; flush?: b
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg-panel);
+  background:
+    linear-gradient(180deg, rgba(35, 200, 255, 0.05), transparent 90px),
+    linear-gradient(160deg, rgba(17, 30, 50, 0.86), rgba(8, 14, 24, 0.9));
   border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(127, 227, 255, 0.14), inset 0 0 40px rgba(35, 200, 255, 0.03);
   clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  backdrop-filter: blur(4px);
+}
+
+.ak-panel::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  bottom: -1px;
+  width: 14px;
+  height: 14px;
+  border-left: 2px solid var(--panel-color);
+  border-bottom: 2px solid var(--panel-color);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .ak-panel::after {
@@ -49,6 +67,7 @@ withDefaults(defineProps<{ title: string; en?: string; color?: string; flush?: b
   padding: 10px 16px 0;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--panel-color) 14%, transparent), transparent 55%);
 }
 
 .ak-panel__mark {
@@ -67,6 +86,7 @@ withDefaults(defineProps<{ title: string; en?: string; color?: string; flush?: b
 
 .ak-panel__en {
   font-size: 11px;
+  font-style: italic;
 }
 
 .ak-panel__actions {

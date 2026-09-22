@@ -88,7 +88,7 @@ const effTone = computed(() => (props.summary.efficiency < 75 ? 'is-warn' : ''))
   overflow: hidden;
   background:
     repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.015) 0 10px, transparent 10px 20px),
-    linear-gradient(180deg, rgba(28, 35, 44, 0.95), rgba(14, 18, 24, 0.95));
+    linear-gradient(180deg, rgba(20, 34, 56, 0.95), rgba(9, 15, 26, 0.95));
   border: 1px solid var(--border-strong);
   border-top: 4px solid var(--room);
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
@@ -101,6 +101,23 @@ const effTone = computed(() => (props.summary.efficiency < 75 ? 'is-warn' : ''))
   border-color: var(--room);
   box-shadow: inset 0 0 40px color-mix(in srgb, var(--room) 18%, transparent);
 }
+
+.room::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.13), transparent);
+  transform: translateX(-160%) skewX(-14deg);
+  pointer-events: none;
+}
+
+.room:hover::after,
+.room:focus-visible::after { animation: room-sheen 0.9s ease-out; }
+
+@keyframes room-sheen { to { transform: translateX(420%) skewX(-14deg); } }
 
 .room.is-risk { border-color: var(--signal-risk); animation: ak-alarm-pulse 1.4s ease-in-out infinite; }
 

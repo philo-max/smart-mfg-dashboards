@@ -67,8 +67,27 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
   align-items: center;
   gap: 20px;
   padding: 0 24px 0 0;
-  background: linear-gradient(180deg, rgba(10, 12, 15, 0.98), rgba(10, 12, 15, 0.7));
+  background: linear-gradient(180deg, rgba(5, 10, 19, 0.98), rgba(8, 16, 28, 0.72));
   border-bottom: 1px solid var(--border);
+}
+
+.top::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 220px;
+  height: 2px;
+  z-index: 1;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+  box-shadow: 0 0 14px var(--accent);
+  animation: top-glint 7s ease-in-out infinite;
+}
+
+@keyframes top-glint {
+  0% { transform: translateX(-240px); opacity: 0; }
+  10% { opacity: 1; }
+  70%, 100% { transform: translateX(1920px); opacity: 0; }
 }
 
 .top::after {
@@ -86,8 +105,8 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
 .top__back,
 .top__home {
   border: 0;
-  background: #e9edf1;
-  color: #0a0c0f;
+  background: linear-gradient(180deg, #f2f8ff, #c9dcf0);
+  color: #08111f;
   display: flex;
   align-items: center;
   font-weight: 700;
@@ -108,7 +127,7 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
 .top__home {
   margin-left: -8px;
   padding: 0 22px 0 26px;
-  background: #2b333d;
+  background: linear-gradient(180deg, #23374f, #182a40);
   color: var(--text-primary);
   clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
 }

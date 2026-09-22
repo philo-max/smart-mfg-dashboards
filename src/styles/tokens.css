@@ -21,16 +21,16 @@
   --font-en: "Bahnschrift", "DIN Alternate", "Oswald", "Arial Narrow", sans-serif;
   --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
 
-  --bg-app: #0a0c0f;
-  --bg-panel: rgba(16, 20, 26, 0.88);
-  --bg-panel-2: rgba(26, 32, 40, 0.9);
-  --bg-elevated: #1c232c;
-  --border: #29313b;
-  --border-strong: #3b4652;
+  --bg-app: #060b14;
+  --bg-panel: rgba(11, 19, 32, 0.84);
+  --bg-panel-2: rgba(19, 30, 48, 0.9);
+  --bg-elevated: #14202f;
+  --border: #1e3049;
+  --border-strong: #2f4866;
 
-  --text-primary: #e9edf1;
-  --text-secondary: #a3adb7;
-  --text-muted: #6b7682;
+  --text-primary: #eaf2fb;
+  --text-secondary: #9fb3ca;
+  --text-muted: #647a93;
 
   --accent: #23c8ff;
   --accent-strong: #7fe3ff;
@@ -53,7 +53,8 @@
   --room-inspection: #ff6f3c;
   --room-logistics: #3a8dff;
 
-  --grid-line: rgba(35, 200, 255, 0.05);
+  --grid-line: rgba(35, 200, 255, 0.045);
+  --glass-edge: linear-gradient(135deg, rgba(127, 227, 255, 0.55), rgba(35, 200, 255, 0.08) 38%, rgba(35, 200, 255, 0.04) 62%, rgba(127, 227, 255, 0.35));
   --hazard: repeating-linear-gradient(-45deg, var(--highlight) 0 6px, transparent 6px 12px);
   --cut: 14px;
 

@@ -5,6 +5,8 @@ import AlarmToast from './AlarmToast.vue'
 import ScenarioConsole from './ScenarioConsole.vue'
 import TraceModal from './TraceModal.vue'
 import CauseModal from './CauseModal.vue'
+import TransitionCurtain from './TransitionCurtain.vue'
+import BootSequence from './BootSequence.vue'
 import PageTransition from '@/components/motion/PageTransition.vue'
 import BaseOverview from '@/features/overview/BaseOverview.vue'
 import WarehouseView from '@/features/warehouse/WarehouseView.vue'
@@ -32,6 +34,20 @@ const VIEWS: Record<ViewId, Component> = {
 const ui = useUiStore()
 const plant = usePlantStore()
 const scale = ref(1)
+const skipBoot = new URLSearchParams(window.location.search).has('noboot') || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const contentReady = ref(skipBoot)
+const bootVisible = ref(!skipBoot)
+
+if (skipBoot) ui.endBoot()
+
+function onBootOpen() {
+  contentReady.value = true
+}
+
+function onBootDone() {
+  bootVisible.value = false
+  ui.endBoot()
+}
 const viewport = ref<HTMLDivElement | null>(null)
 const activeView = computed(() => VIEWS[ui.view])
 let observer: ResizeObserver | null = null
@@ -66,7 +82,7 @@ watch(() => [ui.tour, ui.view], scheduleTour)
 function onKey(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
-  if (e.ctrlKey || e.metaKey || e.altKey) return
+  if (e.ctrlKey || e.metaKey || e.altKey || ui.booting) return
   if (document.querySelector(USER_MODAL)) return
   if (e.key === '0') ui.back()
   else if (e.key >= '1' && e.key <= '5') ui.navigate(MODULE_ORDER[Number(e.key) - 1])
@@ -96,12 +112,15 @@ onBeforeUnmount(() => {
   <div ref="viewport" class="viewport">
     <div class="stage" :style="{ transform: `translate(-50%, -50%) scale(${scale})` }">
       <div class="stage__bg" aria-hidden="true"></div>
+      <div class="stage__scan" aria-hidden="true"></div>
       <TopBar />
       <main class="stage__main">
-        <PageTransition>
+        <PageTransition v-if="contentReady">
           <component :is="activeView" :key="ui.view" />
         </PageTransition>
       </main>
+      <TransitionCurtain />
+      <BootSequence v-if="bootVisible" @open="onBootOpen" @done="onBootDone" />
       <AlarmToast />
       <ScenarioConsole />
       <TraceModal />
@@ -137,21 +156,61 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  overflow: hidden;
   background:
-    radial-gradient(ellipse at 45% 55%, rgba(35, 200, 255, 0.1), transparent 60%),
+    radial-gradient(ellipse at 18% 8%, rgba(35, 200, 255, 0.16), transparent 46%),
+    radial-gradient(ellipse at 88% 92%, rgba(58, 141, 255, 0.14), transparent 50%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55)),
     linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 40px 40px,
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 40px 40px;
 }
 
+.stage__bg::before,
 .stage__bg::after {
-  content: 'RHODES ISLAND · RIIC';
+  content: '';
   position: absolute;
-  right: 28px;
-  bottom: 10px;
+  top: -20%;
+  bottom: -20%;
+  transform: skewX(-14deg);
+}
+
+.stage__bg::before {
+  left: 8%;
+  width: 260px;
+  background: linear-gradient(90deg, transparent, rgba(35, 200, 255, 0.06), transparent);
+  animation: beam-drift 26s ease-in-out infinite alternate;
+}
+
+.stage__bg::after {
+  left: 52%;
+  width: 120px;
+  background: linear-gradient(90deg, transparent, rgba(127, 227, 255, 0.05), transparent);
+  animation: beam-drift 34s ease-in-out -9s infinite alternate-reverse;
+}
+
+@keyframes beam-drift {
+  from { transform: translateX(-260px) skewX(-14deg); }
+  to { transform: translateX(520px) skewX(-14deg); }
+}
+
+.stage__scan {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(160, 220, 255, 0.022) 0 1px, transparent 1px 3px);
+}
+
+.stage__scan::after {
+  content: 'INTELLIGENT MANUFACTURING · LENOVO MINI LINE';
+  position: absolute;
+  right: 30px;
+  bottom: 8px;
   font-family: var(--font-en);
   font-size: 11px;
+  font-style: italic;
   letter-spacing: 0.4em;
-  color: rgba(163, 173, 183, 0.18);
+  color: rgba(159, 179, 202, 0.22);
 }
 
 .stage__main {

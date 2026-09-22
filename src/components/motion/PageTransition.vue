@@ -1,32 +1,46 @@
 <script setup lang="ts">
-import { AnimatePresence, Motion } from 'motion-v'
-import { computed } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useUiStore } from '@/stores/ui'
 
-/**
- * 视图转场：基建总览 ↔ 房间。进入房间时内容自右滑入（方舟式推进），返回时自左滑入。
- * 退场 + 入场合计约 600ms；减少动效时压缩为瞬时。
- */
-const ui = useUiStore()
+const ENTER_WINDOW_MS = 2000
+const MAX_SEQ = 14
+const ROW_PX = 60
 
-const duration = computed(() => (ui.reducedMotion ? 0.001 : 0.3))
-const dir = computed(() => (ui.view === 'overview' ? -1 : 1))
-const ease = [0.22, 1, 0.36, 1] as const
+const ui = useUiStore()
+const layer = ref<HTMLDivElement | null>(null)
+const entering = ref(false)
+let leaveTimer: number | null = null
+
+function assignSequence() {
+  const root = layer.value
+  if (!root) return
+  const rows = [...root.querySelectorAll<HTMLElement>('.ak-panel')].map((el) => {
+    const r = el.getBoundingClientRect()
+    return { el, row: Math.round(r.top / ROW_PX), left: r.left }
+  })
+  rows.sort((a, b) => a.row - b.row || a.left - b.left)
+  rows.forEach((item, i) => item.el.style.setProperty('--seq', String(Math.min(i, MAX_SEQ))))
+}
+
+async function playEnter() {
+  entering.value = true
+  await nextTick()
+  assignSequence()
+  if (leaveTimer !== null) window.clearTimeout(leaveTimer)
+  leaveTimer = window.setTimeout(() => (entering.value = false), ENTER_WINDOW_MS)
+}
+
+onMounted(playEnter)
+watch(() => ui.view, playEnter, { flush: 'post' })
+onBeforeUnmount(() => {
+  if (leaveTimer !== null) window.clearTimeout(leaveTimer)
+})
 </script>
 
 <template>
-  <AnimatePresence mode="wait" :initial="false">
-    <Motion
-      :key="ui.view"
-      class="page-layer"
-      :initial="{ opacity: 0, x: 60 * dir }"
-      :animate="{ opacity: 1, x: 0 }"
-      :exit="{ opacity: 0, x: -40 * dir }"
-      :transition="{ duration, ease }"
-    >
-      <slot />
-    </Motion>
-  </AnimatePresence>
+  <div ref="layer" class="page-layer" :class="{ 'is-entering': entering }">
+    <slot />
+  </div>
 </template>
 
 <style scoped>
@@ -36,10 +50,32 @@ const ease = [0.22, 1, 0.36, 1] as const
   padding: 18px 24px 22px;
   overflow: hidden;
   display: flex;
+  --enter-base: 0.24s;
 }
 
 .page-layer > :deep(*) {
   flex: 1;
   min-width: 0;
+}
+
+.page-layer.is-entering :deep(.ak-panel) {
+  animation: panel-in 0.62s var(--ease-standard) both;
+  animation-delay: calc(var(--enter-base) + var(--seq, 0) * 0.055s);
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.985);
+    filter: brightness(2.2) saturate(0.4);
+  }
+  60% {
+    filter: brightness(1.35);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
 }
 </style>

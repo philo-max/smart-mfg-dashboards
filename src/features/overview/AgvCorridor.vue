@@ -82,7 +82,7 @@ const markers = computed(() => plant.state.agv.agvs.map((a) => ({ agv: a, ...pla
   display: grid;
   grid-template-columns: 250px 1fr;
   min-height: 0;
-  background: linear-gradient(180deg, rgba(20, 26, 32, 0.95), rgba(10, 13, 17, 0.95));
+  background: linear-gradient(180deg, rgba(16, 27, 44, 0.95), rgba(7, 12, 21, 0.95));
   border: 1px solid var(--border-strong);
   border-top: 4px solid var(--room);
 }

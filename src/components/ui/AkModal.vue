@@ -37,6 +37,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <Teleport defer to="#ak-overlay">
+    <Transition name="ak-modal">
     <div v-if="open" class="ak-modal-mask" :data-alert="alert || undefined" @click.self="close">
       <div
         ref="dialog"
@@ -59,6 +60,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <div class="ak-modal__body"><slot /></div>
       </div>
     </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -75,9 +77,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 
 .ak-modal {
+  position: relative;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #151b23, #0d1117);
+  background: linear-gradient(180deg, #12203a, #0a1220);
   border: 1px solid var(--border-strong);
   border-top: 3px solid var(--modal-color);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 30px rgba(35, 200, 255, 0.12);
@@ -131,5 +134,37 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+.ak-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ak-modal-enter-active { transition: opacity 0.22s ease-out; }
+.ak-modal-leave-active { transition: opacity 0.16s ease-in; }
+.ak-modal-enter-from,
+.ak-modal-leave-to { opacity: 0; }
+
+.ak-modal-enter-active .ak-modal { animation: modal-rise 0.42s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.ak-modal-enter-active .ak-modal::before { animation: modal-flash 0.7s ease-out 0.05s both; }
+.ak-modal-leave-active .ak-modal { animation: modal-sink 0.16s ease-in both; }
+
+@keyframes modal-rise {
+  from { transform: translateY(70px) skewY(1.2deg); clip-path: polygon(0 0, 100% 0, 100% 0, 100% 0, 0 0); }
+  to { transform: none; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%); }
+}
+
+@keyframes modal-sink {
+  to { transform: translateY(30px); opacity: 0; }
+}
+
+@keyframes modal-flash {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0) scaleX(1.02); }
 }
 </style>

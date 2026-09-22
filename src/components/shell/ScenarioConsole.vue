@@ -83,7 +83,7 @@ function run(s: ScenarioDef) {
   flex-direction: column;
   gap: 14px;
   padding: 16px 18px 14px;
-  background: linear-gradient(180deg, rgba(20, 26, 34, 0.98), rgba(10, 13, 17, 0.98));
+  background: linear-gradient(180deg, rgba(16, 27, 44, 0.98), rgba(7, 12, 21, 0.98));
   border: 1px solid var(--accent-line);
   border-top: 3px solid var(--highlight);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
