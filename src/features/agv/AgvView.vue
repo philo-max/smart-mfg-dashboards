@@ -8,7 +8,7 @@ import PointsPanel from '@/components/ui/PointsPanel.vue'
 import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
 import EChart from '@/components/charts/EChart.vue'
-import { C, catAxis, fade, itemTooltip, legend, ring, tooltip, valAxis } from '@/components/charts/theme'
+import { C, catAxis, fade, itemTooltip, legend, ring, tooltip, valAxis, areaFade } from '@/components/charts/theme'
 import AgvMap from './AgvMap.vue'
 import { AGV_ROUTES } from '@/data/sim/constants'
 import { agvResponseRate, avgTransportSeconds } from '@/data/sim/selectors'
@@ -64,7 +64,7 @@ const batteryOption = computed<EChartsOption>(() => ({
   xAxis: { type: 'value', min: 0, max: 100, show: false },
   yAxis: catAxis(fleet.value.agvs.map((a) => a.id), { inverse: true, axisLine: { show: false }, axisLabel: { color: C.text, fontSize: 12 } }),
   series: [{
-    type: 'bar', barWidth: 12, showBackground: true, backgroundStyle: { color: 'rgba(255,255,255,0.06)' },
+    type: 'bar', barWidth: 12, showBackground: true, backgroundStyle: { color: 'rgba(127, 200, 255, 0.06)' },
     label: { show: true, position: 'right', color: C.text, formatter: '{c}%' },
     markLine: { symbol: 'none', silent: true, lineStyle: { color: C.risk, type: 'dashed' }, label: { show: false }, data: [{ xAxis: LOW_BATTERY }] },
     data: fleet.value.agvs.map((a) => ({
@@ -98,7 +98,7 @@ const trendOption = computed<EChartsOption>(() => ({
   yAxis: [valAxis({ minInterval: 1 }), valAxis({ minInterval: 1, splitLine: { show: false } })],
   series: [
     { name: '完成任务', type: 'bar', data: fleet.value.history.map((h) => h.done), itemStyle: { color: fade(C.room.agv, 'cc', '30') } },
-    { name: '阻塞台数', type: 'line', yAxisIndex: 1, step: 'end', showSymbol: false, data: fleet.value.history.map((h) => h.blocked), lineStyle: { color: C.risk, width: 2 }, areaStyle: { color: fade(C.risk, '55', '05') } },
+    { name: '阻塞台数', type: 'line', yAxisIndex: 1, step: 'end', showSymbol: false, data: fleet.value.history.map((h) => h.blocked), lineStyle: { color: C.risk, width: 2 }, areaStyle: { color: areaFade(C.risk, '55', '05') } },
   ],
 }))
 </script>
@@ -231,7 +231,7 @@ const trendOption = computed<EChartsOption>(() => ({
 .fleet__bar {
   grid-column: 1 / -1;
   height: 4px;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(127, 200, 255, 0.07);
 }
 
 .fleet__bar em { display: block; height: 100%; background: var(--room-agv); transition: width 0.4s linear; }

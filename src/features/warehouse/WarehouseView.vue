@@ -10,7 +10,7 @@ import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
 import RfidLink from '@/components/ui/RfidLink.vue'
 import EChart from '@/components/charts/EChart.vue'
-import { C, catAxis, fade, itemTooltip, legend, ring, tooltip, valAxis } from '@/components/charts/theme'
+import { C, catAxis, itemTooltip, legend, ring, tooltip, valAxis, areaFade } from '@/components/charts/theme'
 import WarehouseHeatmap from './WarehouseHeatmap.vue'
 import { MODULES } from '@/data/modules'
 import { DWELL_HOT_MIN, FAULT_CATALOG, MATERIAL_TYPES } from '@/data/sim/constants'
@@ -62,8 +62,8 @@ const flowOption = computed<EChartsOption>(() => ({
   xAxis: catAxis(wh.value.flow.map((_, i) => String(i + 1)), { axisLabel: { show: false } }),
   yAxis: valAxis({ minInterval: 1, name: `近 ${FLOW_WINDOW} tick` }),
   series: [
-    { name: '入库', type: 'line', smooth: true, showSymbol: false, data: rolling(wh.value.flow.map((f) => f.in)), lineStyle: { color: C.accent, width: 2 }, areaStyle: { color: fade(C.accent, '55', '05') } },
-    { name: '出库', type: 'line', smooth: true, showSymbol: false, data: rolling(wh.value.flow.map((f) => f.out)), lineStyle: { color: C.highlight, width: 2 }, areaStyle: { color: fade(C.highlight, '55', '05') } },
+    { name: '入库', type: 'line', smooth: true, showSymbol: false, data: rolling(wh.value.flow.map((f) => f.in)), lineStyle: { color: C.accent, width: 2 }, areaStyle: { color: areaFade(C.accent, '55', '05') } },
+    { name: '出库', type: 'line', smooth: true, showSymbol: false, data: rolling(wh.value.flow.map((f) => f.out)), lineStyle: { color: C.highlight, width: 2 }, areaStyle: { color: areaFade(C.highlight, '55', '05') } },
   ],
 }))
 
@@ -75,7 +75,7 @@ const alarmOption = computed<EChartsOption>(() => {
     xAxis: { type: 'value', show: false, minInterval: 1, max: (v: { max: number }) => Math.max(3, v.max) },
     yAxis: catAxis(rows.map((r) => r.desc), { inverse: true, axisLine: { show: false }, axisLabel: { color: C.text, fontSize: 12 } }),
     series: [{
-      type: 'bar', barWidth: 10, showBackground: true, backgroundStyle: { color: 'rgba(255,255,255,0.05)' },
+      type: 'bar', barWidth: 10, showBackground: true, backgroundStyle: { color: 'rgba(127, 200, 255, 0.05)' },
       label: { show: true, position: 'right', color: C.text },
       data: rows.map((r) => ({ value: r.count, itemStyle: { color: r.count > 0 ? C.risk : C.pos, opacity: r.count > 0 ? 1 : 0.35 } })),
     }],

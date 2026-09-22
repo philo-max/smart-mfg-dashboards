@@ -9,7 +9,7 @@ import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
 import RfidLink from '@/components/ui/RfidLink.vue'
 import EChart from '@/components/charts/EChart.vue'
-import { C, catAxis, fade, miniGauge, ring, tooltip, valAxis } from '@/components/charts/theme'
+import { C, catAxis, miniGauge, ring, tooltip, valAxis, areaFade } from '@/components/charts/theme'
 import { MODULES } from '@/data/modules'
 import { OEE_WARN, TRANSPORT_LATE_S } from '@/data/sim/constants'
 import { agvResponseRate, avgStorageMinutes, oeeOf } from '@/data/sim/selectors'
@@ -46,7 +46,7 @@ const deliveryOption = computed<EChartsOption>(() => ({
   series: [{
     type: 'line', smooth: true, connectNulls: true, symbol: 'circle', symbolSize: 5,
     data: lg.value.orderHourly.map((b) => (b.total >= MIN_BUCKET_ORDERS ? Math.round((b.onTime / b.total) * 1000) / 10 : null)),
-    lineStyle: { color: C.room.logistics, width: 2 }, itemStyle: { color: C.room.logistics }, areaStyle: { color: fade(C.room.logistics) },
+    lineStyle: { color: C.room.logistics, width: 2 }, itemStyle: { color: C.room.logistics }, areaStyle: { color: areaFade(C.room.logistics) },
     markLine: { symbol: 'none', silent: true, lineStyle: { color: C.highlight, type: 'dashed' }, label: { color: C.highlight, formatter: `目标 ${ON_TIME_TARGET}%` }, data: [{ yAxis: ON_TIME_TARGET }] },
   }],
 }))
@@ -59,7 +59,7 @@ const transportOption = computed<EChartsOption>(() => ({
   series: [{
     type: 'line', smooth: true, symbol: 'circle', symbolSize: 5,
     data: lg.value.transport.map((t) => (t.seconds > TRANSPORT_LATE_S ? { value: t.seconds, itemStyle: { color: C.risk }, symbolSize: 9 } : t.seconds)),
-    lineStyle: { color: C.room.logistics, width: 2 }, itemStyle: { color: C.room.logistics }, areaStyle: { color: fade(C.room.logistics) },
+    lineStyle: { color: C.room.logistics, width: 2 }, itemStyle: { color: C.room.logistics }, areaStyle: { color: areaFade(C.room.logistics) },
     markLine: { symbol: 'none', silent: true, lineStyle: { color: C.highlight, type: 'dashed' }, label: { color: C.highlight, formatter: `交付红线 ${TRANSPORT_LATE_S}s` }, data: [{ yAxis: TRANSPORT_LATE_S }] },
   }],
 }))

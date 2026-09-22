@@ -10,7 +10,7 @@ import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
 import RfidLink from '@/components/ui/RfidLink.vue'
 import EChart from '@/components/charts/EChart.vue'
-import { C, catAxis, fade, gauge, ring, tooltip, valAxis } from '@/components/charts/theme'
+import { C, catAxis, fade, gauge, ring, tooltip, valAxis, areaFade } from '@/components/charts/theme'
 import { MODULES } from '@/data/modules'
 import { REWORK_THRESHOLD, TAKT_TARGET, TORQUE_MAX, TORQUE_MIN } from '@/data/sim/constants'
 import { equipmentOf, oeeOf } from '@/data/sim/selectors'
@@ -68,7 +68,7 @@ const reworkOption = computed<EChartsOption>(() => ({
     name: '滚动返工率', type: 'line', smooth: true, showSymbol: false,
     data: asm.value.reworkHistory,
     lineStyle: { color: alarming.value ? C.risk : C.room.assembly, width: 2 },
-    areaStyle: { color: fade(alarming.value ? C.risk : C.room.assembly) },
+    areaStyle: { color: areaFade(alarming.value ? C.risk : C.room.assembly) },
     markLine: { symbol: 'none', silent: true, lineStyle: { color: C.highlight, type: 'dashed' }, label: { color: C.highlight, formatter: `标准 ${REWORK_THRESHOLD}%` }, data: [{ yAxis: REWORK_THRESHOLD }] },
   }],
 }))
@@ -83,7 +83,7 @@ const torqueOption = computed<EChartsOption>(() => ({
     name: '拧紧扭矩', type: 'line', smooth: true, showSymbol: false,
     data: asm.value.torque,
     lineStyle: { color: peakOut.value ? C.risk : C.accent, width: 2.5 },
-    areaStyle: { color: fade(peakOut.value ? C.risk : C.accent, '55', '05') },
+    areaStyle: { color: areaFade(peakOut.value ? C.risk : C.accent, '55', '05') },
     markArea: { silent: true, itemStyle: { color: 'rgba(71,209,140,0.10)' }, data: [[{ yAxis: TORQUE_MIN }, { yAxis: TORQUE_MAX }]] },
     markLine: {
       symbol: 'none', silent: true, lineStyle: { color: C.pos, type: 'dashed' },
@@ -101,7 +101,7 @@ const taktOption = computed<EChartsOption>(() => ({
   series: [{
     type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
     data: asm.value.taktHistory.map((v) => (v > TAKT_TARGET + 8 ? { value: v, itemStyle: { color: C.risk }, symbolSize: 10 } : v)),
-    lineStyle: { color: C.room.assembly, width: 2 }, itemStyle: { color: C.room.assembly }, areaStyle: { color: fade(C.room.assembly) },
+    lineStyle: { color: C.room.assembly, width: 2 }, itemStyle: { color: C.room.assembly }, areaStyle: { color: areaFade(C.room.assembly) },
     markLine: { symbol: 'none', silent: true, lineStyle: { color: C.highlight, type: 'dashed' }, label: { color: C.highlight, formatter: `节拍目标 ${TAKT_TARGET}s` }, data: [{ yAxis: TAKT_TARGET }] },
   }],
 }))
@@ -208,7 +208,7 @@ const taktOption = computed<EChartsOption>(() => ({
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: conic-gradient(var(--room-assembly) calc(var(--p) * 1%), rgba(255, 255, 255, 0.08) 0);
+  background: conic-gradient(var(--room-assembly) calc(var(--p) * 1%), rgba(127, 200, 255, 0.08) 0);
 }
 
 .takt__ring span {
@@ -241,7 +241,7 @@ const taktOption = computed<EChartsOption>(() => ({
   padding: 6px 0;
   font-size: 13px;
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(127, 200, 255, 0.05);
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%, 8px 50%);
 }
 

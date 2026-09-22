@@ -52,7 +52,7 @@ const chains = computed(() => causalChains(plant.state))
   flex: 1;
   padding: 5px 0;
   font-size: 12px;
-  background: rgba(233, 237, 241, 0.04);
+  background: rgba(160, 205, 255, 0.04);
   border: 1px solid var(--border);
   color: var(--text-secondary);
   white-space: nowrap;

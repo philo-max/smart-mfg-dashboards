@@ -1,5 +1,5 @@
 import type { EChartsOption } from 'echarts'
-import { C, PALETTE, catAxis, fade, legend, tooltip, valAxis } from '@/components/charts/theme'
+import { C, PALETTE, catAxis, fade, legend, tooltip, valAxis, areaFade } from '@/components/charts/theme'
 import { NOMINAL, TOLERANCE } from '@/data/sim/constants'
 import type { HourBucket, InspectionStation } from '@/data/sim/types'
 
@@ -27,7 +27,7 @@ export function trendOption(list: HourBucket[], threshold: number): EChartsOptio
       {
         name: '一次合格率', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
         data: list.map((d) => { const v = rateOf(d); return v < threshold ? { value: v, itemStyle: { color: C.risk }, symbolSize: 10 } : v }),
-        lineStyle: { color: C.room.inspection, width: 2.5 }, itemStyle: { color: C.room.inspection }, areaStyle: { color: fade(C.room.inspection) },
+        lineStyle: { color: C.room.inspection, width: 2.5 }, itemStyle: { color: C.room.inspection }, areaStyle: { color: areaFade(C.room.inspection) },
         markLine: { symbol: 'none', silent: true, lineStyle: { color: C.highlight, type: 'dashed' }, label: { color: C.highlight, formatter: `FPY 阈值 ${threshold}%` }, data: [{ yAxis: threshold }] },
       },
     ],
@@ -56,7 +56,7 @@ export function stationBarOption(stations: InspectionStation[], threshold: numbe
     xAxis: { type: 'value', min: 95, max: 100, show: false },
     yAxis: catAxis(stations.map((s) => s.name), { inverse: true, axisLine: { show: false }, axisLabel: { color: C.text, fontSize: 12 } }),
     series: [{
-      type: 'bar', barWidth: 12, showBackground: true, backgroundStyle: { color: 'rgba(255,255,255,0.06)', borderRadius: 6 },
+      type: 'bar', barWidth: 12, showBackground: true, backgroundStyle: { color: 'rgba(127, 200, 255, 0.06)', borderRadius: 6 },
       label: { show: true, position: 'right', color: C.text, formatter: '{c}%' },
       data: rates.map((v, i) => ({ value: v, itemStyle: { borderRadius: 6, color: i === selected ? C.highlight : v < threshold ? C.risk : C.room.inspection } })),
     }],
@@ -103,7 +103,7 @@ export function energyOption(hourly: HourBucket[], alertKw: number): EChartsOpti
     xAxis: catAxis(hourly.map((h) => h.label), { axisLabel: { color: C.dim, fontSize: 10, interval: 3 } }),
     yAxis: [valAxis({ name: 'kW' }), valAxis({ name: '缺陷率 %', splitLine: { show: false } })],
     series: [
-      { name: '设备功率', type: 'line', smooth: true, showSymbol: false, data: hourly.map((h) => h.power), lineStyle: { color: C.warn, width: 2 }, areaStyle: { color: fade(C.warn) }, markArea: { silent: true, itemStyle: { color: 'rgba(255,70,85,0.16)' }, data: areas as never } },
+      { name: '设备功率', type: 'line', smooth: true, showSymbol: false, data: hourly.map((h) => h.power), lineStyle: { color: C.warn, width: 2 }, areaStyle: { color: areaFade(C.warn) }, markArea: { silent: true, itemStyle: { color: 'rgba(255,70,85,0.16)' }, data: areas as never } },
       { name: '缺陷率', type: 'line', smooth: true, yAxisIndex: 1, symbol: 'circle', symbolSize: 5, data: hourly.map((h) => (h.pass + h.fail ? Math.round((h.fail / (h.pass + h.fail)) * 10000) / 100 : 0)), lineStyle: { color: C.risk, width: 2 }, itemStyle: { color: C.risk } },
     ],
   }

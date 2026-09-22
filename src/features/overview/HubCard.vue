@@ -62,7 +62,7 @@ const LEVEL_TEXT = { normal: '正常', warn: '预警', risk: '异常' } as const
   padding: 0 18px 16px;
   background:
     radial-gradient(circle at 50% 30%, rgba(35, 200, 255, 0.14), transparent 60%),
-    linear-gradient(180deg, rgba(18, 30, 40, 0.96), rgba(10, 16, 22, 0.96));
+    linear-gradient(180deg, rgba(16, 32, 52, 0.96), rgba(8, 15, 26, 0.96));
   border: 1px solid var(--accent-line);
   border-top: 4px solid var(--room);
   box-shadow: inset 0 0 50px rgba(35, 200, 255, 0.1), 0 0 24px rgba(35, 200, 255, 0.12);
@@ -138,7 +138,7 @@ const LEVEL_TEXT = { normal: '正常', warn: '预警', risk: '异常' } as const
   align-items: center;
   gap: 10px;
   padding: 7px 10px;
-  background: rgba(233, 237, 241, 0.04);
+  background: rgba(160, 205, 255, 0.04);
   border: 1px solid var(--border);
   font-size: 13px;
 }

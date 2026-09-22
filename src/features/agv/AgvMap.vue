@@ -144,7 +144,7 @@ function track(e: MouseEvent, id: string) {
   padding: 10px 12px;
   font-size: 12px;
   color: var(--text-secondary);
-  background: rgba(12, 16, 22, 0.96);
+  background: rgba(8, 17, 31, 0.96);
   border: 1px solid var(--room-agv);
   pointer-events: none;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);

@@ -305,7 +305,7 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
   text-align: center;
   font-size: 10px;
   padding: 1px 0;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(127, 200, 255, 0.05);
 }
 
 .rec__pos i.ok { color: var(--signal-pos); background: rgba(71, 209, 140, 0.1); }

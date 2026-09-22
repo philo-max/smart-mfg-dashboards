@@ -45,7 +45,7 @@ const option = computed<EChartsOption>(() => ({
     min: 0, max: MAX_DWELL, calculable: false, orient: 'horizontal', left: 'center', bottom: 6,
     itemWidth: 12, itemHeight: 220, text: [`${MAX_DWELL} min`, '0'], textStyle: { color: C.dim },
     inRange: { color: ['#123a2a', '#1f7a4d', C.pos, C.warn, C.risk] },
-    outOfRange: { color: '#1c232c' },
+    outOfRange: { color: '#14202f' },
   },
   series: [{
     type: 'heatmap',

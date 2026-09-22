@@ -176,7 +176,7 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
   gap: 8px;
   height: 38px;
   padding: 0 14px;
-  background: rgba(233, 237, 241, 0.06);
+  background: rgba(160, 205, 255, 0.06);
   border: 1px solid var(--border);
   color: var(--text-secondary);
 }

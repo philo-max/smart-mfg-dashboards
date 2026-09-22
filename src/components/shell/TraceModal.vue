@@ -141,7 +141,7 @@ function jump(module: (typeof MODULES)[keyof typeof MODULES]['id'], focus: strin
   padding: 10px 14px 10px 26px;
   position: relative;
   text-align: left;
-  background: rgba(233, 237, 241, 0.04);
+  background: rgba(160, 205, 255, 0.04);
   border: 1px solid var(--border);
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
 }
@@ -167,7 +167,7 @@ function jump(module: (typeof MODULES)[keyof typeof MODULES]['id'], focus: strin
   align-items: center;
   padding: 9px 12px;
   font-size: 14px;
-  background: rgba(233, 237, 241, 0.03);
+  background: rgba(160, 205, 255, 0.03);
   border-left: 3px solid var(--signal-pos);
 }
 

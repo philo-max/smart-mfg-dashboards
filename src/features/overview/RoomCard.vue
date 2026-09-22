@@ -203,7 +203,7 @@ const effTone = computed(() => (props.summary.efficiency < 75 ? 'is-warn' : ''))
 .room__eff i {
   grid-column: 1 / -1;
   height: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(127, 200, 255, 0.06);
 }
 
 .room__eff em {
@@ -231,7 +231,7 @@ const effTone = computed(() => (props.summary.efficiency < 75 ? 'is-warn' : ''))
   display: grid;
   place-items: center;
   font-size: 13px;
-  background: rgba(233, 237, 241, 0.07);
+  background: rgba(160, 205, 255, 0.07);
   border: 1px solid var(--border-strong);
   border-bottom: 3px solid var(--signal-pos);
 }

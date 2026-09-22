@@ -100,7 +100,7 @@ function jump(module: keyof typeof MODULES, focus: string | null = null) {
   flex-direction: column;
   gap: 6px;
   padding: 16px 14px 12px;
-  background: rgba(233, 237, 241, 0.04);
+  background: rgba(160, 205, 255, 0.04);
   border: 1px solid var(--border);
   border-top: 3px solid var(--signal-pos);
 }

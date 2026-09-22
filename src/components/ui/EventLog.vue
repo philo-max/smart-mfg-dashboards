@@ -64,7 +64,7 @@ function advance(a: PlantAlarm) {
   align-items: center;
   padding: 6px 8px;
   font-size: 12px;
-  background: rgba(233, 237, 241, 0.03);
+  background: rgba(160, 205, 255, 0.03);
   border-left: 3px solid var(--signal-warn);
 }
 

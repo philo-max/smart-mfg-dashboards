@@ -8,11 +8,11 @@ export const C = {
   pos: '#47d18c',
   warn: '#ffb020',
   risk: '#ff4655',
-  text: '#e9edf1',
-  dim: '#8a939c',
-  grid: 'rgba(35,200,255,0.08)',
-  axis: 'rgba(163,173,183,0.35)',
-  bg: '#10141a',
+  text: '#eaf2fb',
+  dim: '#8fa8c4',
+  grid: 'rgba(80,170,255,0.09)',
+  axis: 'rgba(127,170,215,0.32)',
+  bg: '#0b1320',
   room: {
     warehouse: '#9b7bff',
     agv: '#8bdc3a',
@@ -26,10 +26,16 @@ export const PALETTE = [C.accent, C.highlight, C.room.warehouse, C.pos, C.room.i
 
 export const tooltip = {
   trigger: 'axis' as const,
-  backgroundColor: 'rgba(12,16,22,0.95)',
+  backgroundColor: 'rgba(8,17,31,0.92)',
   borderColor: C.accent,
   borderWidth: 1,
   textStyle: { color: C.text, fontSize: 13 },
+  extraCssText: 'backdrop-filter: blur(6px); box-shadow: 0 0 18px rgba(35,200,255,0.28); border-radius: 0;',
+  axisPointer: {
+    lineStyle: { color: C.accent, type: 'dashed' as const, opacity: 0.6 },
+    shadowStyle: { color: 'rgba(35,200,255,0.08)' },
+    label: { backgroundColor: '#123a5c', color: C.text },
+  },
 }
 
 export const itemTooltip = { ...tooltip, trigger: 'item' as const }
@@ -71,6 +77,10 @@ export function fade(color: string, from = '99', to = '05') {
   ])
 }
 
+export function areaFade(color: string, from = '48', to = '00') {
+  return fade(color, from, to)
+}
+
 export function hGrad(from: string, to: string) {
   return new echarts.graphic.LinearGradient(0, 0, 1, 0, [
     { offset: 0, color: from },
@@ -100,7 +110,7 @@ export function ring(value: number, color: string, label: string, target?: numbe
         startAngle: 90,
         data: [
           { value: safe, itemStyle: { color, shadowBlur: 12, shadowColor: color } },
-          { value: 100 - safe, itemStyle: { color: 'rgba(255,255,255,0.06)' } },
+          { value: 100 - safe, itemStyle: { color: 'rgba(127,200,255,0.09)' } },
         ],
       },
       {
@@ -108,7 +118,7 @@ export function ring(value: number, color: string, label: string, target?: numbe
         radius: ['88%', '89.5%'],
         silent: true,
         label: { show: false },
-        data: [{ value: 1, itemStyle: { color: 'rgba(163,173,183,0.25)' } }],
+        data: [{ value: 1, itemStyle: { color: 'rgba(127,227,255,0.3)' } }],
       },
     ],
   }
@@ -124,8 +134,8 @@ export function gauge(value: number, name: string, min = 0, max = 100) {
         startAngle: 210, endAngle: -30,
         axisLine: { lineStyle: { width: 12, color: [[0.6, C.risk], [0.8, C.warn], [1, C.pos]] as [number, string][] } },
         pointer: { width: 4, length: '60%', itemStyle: { color: C.accent } },
-        axisTick: { distance: -12, length: 5, lineStyle: { color: '#fff', width: 1 } },
-        splitLine: { distance: -14, length: 14, lineStyle: { color: '#fff', width: 2 } },
+        axisTick: { distance: -12, length: 5, lineStyle: { color: C.accentStrong, width: 1 } },
+        splitLine: { distance: -14, length: 14, lineStyle: { color: C.accentStrong, width: 2 } },
         axisLabel: { color: C.dim, distance: 18, fontSize: 11 },
         anchor: { show: true, size: 10, itemStyle: { color: C.accent } },
         title: { offsetCenter: [0, '36%'], color: C.dim, fontSize: 13 },
@@ -150,7 +160,7 @@ export function miniGauge(value: number, name: string) {
         axisLine: { lineStyle: { width: 8, color: [[0.6, C.risk], [0.75, C.warn], [1, C.pos]] as [number, string][] } },
         pointer: { width: 3, length: '58%', itemStyle: { color: C.accent } },
         axisTick: { show: false },
-        splitLine: { distance: -8, length: 8, lineStyle: { color: '#fff', width: 1 } },
+        splitLine: { distance: -8, length: 8, lineStyle: { color: C.accentStrong, width: 1 } },
         axisLabel: { show: false },
         anchor: { show: true, size: 7, itemStyle: { color: C.accent } },
         title: { show: false },

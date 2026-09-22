@@ -114,7 +114,7 @@ function advance(alarm: PlantAlarm) {
   display: flex;
   gap: 8px;
   padding: 8px 8px 8px 10px;
-  background: rgba(233, 237, 241, 0.03);
+  background: rgba(160, 205, 255, 0.03);
   border-left: 3px solid var(--signal-warn);
 }
 
