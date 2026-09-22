@@ -4,6 +4,7 @@ import {
   HISTORY_LEN, TICK_SECONDS, TRACE_MAX, TRANSPORT_LATE_S, WORKPIECE_NAMES, WORK_ROUTES,
 } from './constants'
 import { makeWorkpiece, nextRfid, taskName } from './init'
+import { tallyFault } from './faults'
 import { logEvent, rememberWorkpiece } from './lineage'
 import type { AlarmDraft, Agv, AgvLeg, PlantState } from './types'
 
@@ -231,6 +232,7 @@ export function stepLogistics(state: PlantState, rng: Rng, agv: AgvStepResult, n
     const fault = rng.pick(FAULT_CATALOG[eq.id])
     eq.availability = round(Math.max(0.4, eq.availability - FAULT_AVAILABILITY_DROP), 3)
     eq.faults.unshift({ time: clockText(now), code: fault.code, desc: fault.desc, minutes: rng.int(5, 30) })
+    tallyFault(state, fault.code)
     if (eq.faults.length > FAULT_LOG_MAX) eq.faults.length = FAULT_LOG_MAX
     result.driftTriggered = DRIFT_EQUIPMENT.includes(eq.id)
     if (eq.id === 'EQ-MM') {

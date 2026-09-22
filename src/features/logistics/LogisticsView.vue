@@ -8,6 +8,7 @@ import EquipmentModal from '@/components/ui/EquipmentModal.vue'
 import StreamStrip from '@/components/ui/StreamStrip.vue'
 import EventLog from '@/components/ui/EventLog.vue'
 import RfidLink from '@/components/ui/RfidLink.vue'
+import FaultDistributionModal from './FaultDistributionModal.vue'
 import EChart from '@/components/charts/EChart.vue'
 import { C, catAxis, miniGauge, ring, tooltip, valAxis, areaFade } from '@/components/charts/theme'
 import { MODULES } from '@/data/modules'
@@ -27,6 +28,7 @@ const ui = useUiStore()
 const lg = computed(() => plant.state.logistics)
 
 const selectedId = ref<string | null>(null)
+const faultsOpen = ref(false)
 const selectedEquipment = computed<Equipment | null>(() => lg.value.equipment.find((e) => e.id === selectedId.value) ?? null)
 
 onMounted(() => {
@@ -95,7 +97,10 @@ const transportOption = computed<EChartsOption>(() => ({
 
     <div class="col col--center center">
       <AkPanel title="设备 OEE 仪表盘" en="OEE DASHBOARD" :color="meta.color">
-        <template #actions><span class="hint">点击仪表查看该设备故障记录</span></template>
+        <template #actions>
+          <span class="hint">点击仪表查看该设备故障记录</span>
+          <button type="button" class="act" @click="faultsOpen = true">故障分布</button>
+        </template>
         <div class="gauges">
           <button v-for="e in lg.equipment" :key="e.id" type="button" class="gauges__item" :class="{ 'is-warn': oeeOf(e) < OEE_WARN }" @click="selectedId = e.id">
             <div class="gauges__chart"><EChart :option="miniGauge(oeeOf(e), e.name)" /></div>
@@ -136,6 +141,7 @@ const transportOption = computed<EChartsOption>(() => ({
       <PointsPanel unit="logistics" :color="meta.color" />
     </div>
 
+    <FaultDistributionModal v-model:open="faultsOpen" />
     <EquipmentModal :equipment="selectedEquipment" color="var(--room-logistics)" @close="selectedId = null" />
   </div>
 </template>
@@ -146,6 +152,17 @@ const transportOption = computed<EChartsOption>(() => ({
 .center { grid-template-rows: 222px minmax(0, 1fr) 232px; }
 .ring { height: 150px; }
 .hint { font-size: 12px; color: var(--text-muted); }
+
+.act {
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+}
+
+.act:hover { color: #0a0c0f; background: var(--accent); }
 
 .kpis { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 8px; }
 .kpis :deep(.stat) { padding: 6px 10px; }

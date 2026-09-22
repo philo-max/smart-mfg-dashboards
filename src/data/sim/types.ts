@@ -262,6 +262,7 @@ export interface PlantState {
   logistics: LogisticsState
   lineage: LineageState
   cooldowns: Record<string, number>
+  faultTally: Record<string, number>
 }
 
 export type AlarmDraft = Omit<PlantAlarm, 'id' | 'time' | 'status' | 'tick'>

@@ -3,6 +3,7 @@ import { type Rng, clockText } from './rng'
 import { DWELL_HOT_MIN, MATERIAL_TYPES } from './constants'
 import { makeWorkpiece } from './init'
 import { logEvent, rememberWorkpiece } from './lineage'
+import { tallyFault } from './faults'
 import { equipmentOf } from './selectors'
 import type { AlarmDraft, PlantState } from './types'
 
@@ -53,6 +54,7 @@ export function injectScenario(state: PlantState, rng: Rng, id: ScenarioId, now:
       const eq = equipmentOf(state, 'assembly')
       eq.availability = Math.max(0.4, Math.round((eq.availability - ROBOT_AVAILABILITY_DROP) * 1000) / 1000)
       eq.faults.unshift({ time: clockText(now), code: 'Alarm_Robot', desc: '机器人故障', minutes: 12 })
+      tallyFault(state, 'Alarm_Robot')
       state.assembly.driftTicks = DRIFT_TICKS
       return [{ module: 'assembly', level: 'risk', category: '设备故障', focus: eq.id, text: `${DEMO}${eq.name} Alarm_Robot 机器人故障，装配质量可能受影响` }]
     }

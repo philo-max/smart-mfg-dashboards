@@ -205,5 +205,6 @@ export function createPlant(rng: Rng, now: Date = new Date()): PlantState {
     inspection: initInspection(rng, now),
     logistics: initLogistics(rng, now),
     cooldowns: {},
+    faultTally: {},
   }
 }
