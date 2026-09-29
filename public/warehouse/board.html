@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>智能仓储单元监控看板</title>
+<style>
+html,body{margin:0;height:100%;background:#040A24;overflow:hidden}
+#s{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:url(bg_wh_navy.jpg) center/cover}
+#s iframe{position:absolute;border:0;background:transparent}
+</style>
+</head>
+<body>
+<div id="s"></div>
+<script>
+var L=[["header", 0, 0, 1920, 84], ["kpi", 16, 84, 400, 450], ["stats", 16, 546, 400, 254], ["shelf", 432, 84, 706, 412], ["plan", 450, 508, 668, 288], ["util", 1150, 84, 332, 156], ["logs", 1150, 248, 332, 172], ["stacker", 1150, 428, 332, 168], ["todo", 1150, 604, 332, 196], ["online", 1504, 84, 400, 340], ["conv", 1504, 436, 400, 364], ["ticker", 16, 808, 1888, 36], ["chart1", 16, 852, 365, 212], ["chart2", 397, 852, 365, 212], ["chart3", 778, 852, 365, 212], ["chart4", 1158, 852, 365, 212], ["chart5", 1539, 852, 365, 212]];
+var s=document.getElementById('s');
+L.forEach(function(a){var f=document.createElement('iframe');f.src='index.html?m='+a[0];f.style.cssText='left:'+a[1]+'px;top:'+a[2]+'px;width:'+a[3]+'px;height:'+a[4]+'px';s.appendChild(f)});
+function fit(){s.style.transform='scale('+Math.min(innerWidth/1920,innerHeight/1080)+')'}
+fit();addEventListener('resize',fit);
+</script>
+</body>
+</html>

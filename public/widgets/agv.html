@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AGV 深蓝科技小组件</title>
+<link rel="stylesheet" href="agv-theme.css">
+</head>
+<body>
+<div class="card" id="c"></div>
+<script src="agv-core.js"></script>
+<script src="agv-mod1.js"></script>
+<script src="agv-mod2.js"></script>
+<script src="agv-mod3.js"></script>
+<script>
+var m = new URLSearchParams(location.search).get('m') || 'track';
+var mod = AGVM[m](document.getElementById('c'));
+AGV.tick(function (s, now) { mod.render(s, now); });
+</script>
+</body>
+</html>

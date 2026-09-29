@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>widget frame</title>
+<style>
+html,body{margin:0;height:100%;background:url(bg_wh_navy.jpg) 0 0/1920px 1080px no-repeat #040A18;overflow:hidden}
+iframe{position:absolute;left:0;top:0;border:0;background:transparent}
+</style>
+</head>
+<body>
+<script>
+var q = new URLSearchParams(location.search);
+var f = document.createElement('iframe');
+f.src = 'index.html?m=' + q.get('m') + (q.get('open') ? '&open=' + q.get('open') : '') + (q.get('pop') ? '&pop=' + q.get('pop') : '');
+f.style.width = q.get('w') + 'px'; f.style.height = q.get('h') + 'px';
+document.body.appendChild(f);
+</script>
+</body>
+</html>

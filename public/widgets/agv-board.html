@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>MOMA · AGV 智能运输单元</title>
+<style>
+html,body{margin:0;height:100%;background:#040A24;overflow:hidden}
+#s{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:url(bg_agv_deepblue.jpg) center/cover}
+#s iframe{position:absolute;border:0;background:transparent}
+</style>
+</head>
+<body>
+<div id="s"></div>
+<script>
+var L=[['header',40,24,1840,84],['speed',40,132,440,326],['track',504,132,900,326],['ypos',1428,132,452,326],
+['feed',40,482,600,310],['trend',664,482,700,310],['alarms',1388,482,492,310],
+['rfid',40,816,560,224],['starts',624,816,640,224],['summary',1288,816,592,224]];
+var s=document.getElementById('s');
+L.forEach(function(a){var f=document.createElement('iframe');f.src='agv.html?m='+a[0];f.style.cssText='left:'+a[1]+'px;top:'+a[2]+'px;width:'+a[3]+'px;height:'+a[4]+'px';s.appendChild(f)});
+function fit(){s.style.transform='scale('+Math.min(innerWidth/1920,innerHeight/1080)+')'}
+fit();addEventListener('resize',fit);
+</script>
+</body>
+</html>

@@ -18,3 +18,21 @@ chart-lab/output/
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# excluded from public repo: legacy/local-only artifacts, internal platform notes & screenshots
+/app.js
+/manufacturing.css
+/pharma.css
+/styles.css
+/threec.css
+/riic_overview.html
+/riic_接入指南.md
+/scenes_*.sce
+/web_dashboard.sce
+/web_dashboard_dist.zip
+/web_dashboard_standalone.html
+/sedTOiNIf
+/archive/
+/chart-lab/
+/leapiot-replica/
+/report/
