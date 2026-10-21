@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 
 // V2 基建：单页大屏，无路由；页签切换由 Pinia 状态驱动。
 export default defineConfig({
+  base: './',
   plugins: [vue()],
   resolve: {
     alias: {

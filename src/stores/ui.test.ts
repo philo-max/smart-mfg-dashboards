@@ -82,3 +82,27 @@ describe('ui navigation transition', () => {
     expect(ui.phase).toBe('idle')
   })
 })
+
+describe('solo unit mode', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('starts on the solo module and ignores navigation elsewhere', () => {
+    const ui = useUiStore()
+    ui.enterSolo('inspection')
+    ui.endBoot()
+    expect(ui.view).toBe('inspection')
+    ui.navigate('agv', 'AGV-01')
+    ui.back()
+    expect(ui.view).toBe('inspection')
+    expect(ui.focus).toBeNull()
+  })
+
+  it('still accepts navigation to the solo module itself', () => {
+    const ui = useUiStore()
+    ui.enterSolo('inspection')
+    ui.endBoot()
+    ui.navigate('inspection', 'ng')
+    expect(ui.view).toBe('inspection')
+    expect(ui.focus).toBe('ng')
+  })
+})

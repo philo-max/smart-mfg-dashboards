@@ -15,12 +15,17 @@ onBeforeUnmount(() => { if (timer !== null) window.clearInterval(timer) })
 
 const clock = computed(() => now.value.toLocaleTimeString('zh-CN', { hour12: false }))
 const date = computed(() => `${now.value.toLocaleDateString('zh-CN')} 星期${'日一二三四五六'[now.value.getDay()]}`)
+const unresolved = computed(() => {
+  if (!ui.solo) return plant.unresolved
+  const open = plant.alarms.filter((a) => a.module === ui.solo && a.status !== 'resolved')
+  return { total: open.length, risk: open.filter((a) => a.level === 'risk').length }
+})
 const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_META.en, code: HUB_META.code, color: HUB_META.color, room: '基建总览' })
 </script>
 
 <template>
   <header class="top">
-    <div class="top__nav">
+    <div v-if="!ui.solo" class="top__nav">
       <button type="button" class="top__back" :disabled="ui.view === 'overview'" aria-label="返回基建总览" @click="ui.back()">
         <ChevronLeft :size="26" /><span>返回</span>
       </button>
@@ -38,16 +43,16 @@ const title = computed(() => ui.activeModule ?? { name: HUB_META.name, en: HUB_M
     <div class="top__res">
       <span v-if="plant.paused" class="chip chip--pause"><Pause :size="13" />已暂停</span>
       <span v-else-if="plant.speed > 1" class="chip chip--speed ak-num">{{ plant.speed }}× 倍速</span>
-      <button type="button" class="drill drill--tour" :class="{ 'is-open': ui.tour }" :aria-pressed="ui.tour" @click="ui.toggleTour()"><MonitorPlay :size="16" />{{ ui.tour ? '巡视中' : '巡视' }}</button>
+      <button v-if="!ui.solo" type="button" class="drill drill--tour" :class="{ 'is-open': ui.tour }" :aria-pressed="ui.tour" @click="ui.toggleTour()"><MonitorPlay :size="16" />{{ ui.tour ? '巡视中' : '巡视' }}</button>
       <button type="button" class="drill drill--trace" @click="ui.openTrace('')"><ScanLine :size="16" />追溯</button>
       <button type="button" class="drill" :class="{ 'is-open': ui.consoleOpen }" :aria-pressed="ui.consoleOpen" @click="ui.toggleConsole()">
         <FlaskConical :size="16" />演练台
       </button>
-      <div class="res"><Package :size="16" /><span class="res__label">今日产出</span><b class="ak-num">{{ plant.kpis.produced }}<i>/{{ plant.kpis.plan }}</i></b></div>
-      <div class="res"><Gauge :size="16" /><span class="res__label">产线 OEE</span><b class="ak-num">{{ plant.kpis.lineOee }}%</b></div>
+      <div v-if="!ui.solo" class="res"><Package :size="16" /><span class="res__label">今日产出</span><b class="ak-num">{{ plant.kpis.produced }}<i>/{{ plant.kpis.plan }}</i></b></div>
+      <div v-if="!ui.solo" class="res"><Gauge :size="16" /><span class="res__label">产线 OEE</span><b class="ak-num">{{ plant.kpis.lineOee }}%</b></div>
       <div class="res"><ShieldCheck :size="16" /><span class="res__label">FPY</span><b class="ak-num">{{ plant.kpis.fpy }}%</b></div>
-      <div class="res" :class="{ 'is-risk': plant.unresolved.risk > 0 }">
-        <Bell :size="16" /><span class="res__label">未处理告警</span><b class="ak-num">{{ plant.unresolved.total }}</b>
+      <div class="res" :class="{ 'is-risk': unresolved.risk > 0 }">
+        <Bell :size="16" /><span class="res__label">未处理告警</span><b class="ak-num">{{ unresolved.total }}</b>
       </div>
       <div class="top__clock">
         <Activity :size="14" class="tone-pos" />

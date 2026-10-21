@@ -18,6 +18,7 @@ interface PendingNav {
  */
 export const useUiStore = defineStore('ui', () => {
   const view = ref<ViewId>('overview')
+  const solo = ref<ModuleId | null>(null)
   const focus = ref<string | null>(null)
   const reducedMotion = ref(false)
   const phase = ref<TransitPhase>('idle')
@@ -37,7 +38,13 @@ export const useUiStore = defineStore('ui', () => {
     view.value = next
   }
 
+  function enterSolo(id: ModuleId) {
+    solo.value = id
+    view.value = id
+  }
+
   function navigate(next: ViewId, nextFocus: string | null = null) {
+    if (solo.value && next !== solo.value) return
     if (phase.value !== 'idle' || booting.value) {
       queued = { to: next, focus: nextFocus }
       return
@@ -114,8 +121,8 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   return {
-    view, focus, reducedMotion, consoleOpen, traceRfid, causeAlarmId, tour, activeModule, phase, target, booting,
-    navigate, commit, finish, endBoot, setCurtainReady, back, clearFocus, setReducedMotion, toggleConsole, toggleTour,
+    view, solo, focus, reducedMotion, consoleOpen, traceRfid, causeAlarmId, tour, activeModule, phase, target, booting,
+    enterSolo, navigate, commit, finish, endBoot, setCurtainReady, back, clearFocus, setReducedMotion, toggleConsole, toggleTour,
     openTrace, closeTrace, openCause, closeCause,
   }
 })

@@ -16,7 +16,7 @@ let timer: number | null = null
 watch(
   () => plant.latestAlarm,
   (alarm) => {
-    if (!alarm) return
+    if (!alarm || (ui.solo && alarm.module !== ui.solo)) return
     current.value = alarm
     if (timer !== null) window.clearTimeout(timer)
     timer = window.setTimeout(() => { current.value = null }, TOAST_MS)

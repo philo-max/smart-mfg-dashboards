@@ -98,8 +98,8 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
 </script>
 
 <template>
-  <div class="module">
-    <StreamStrip module="inspection" />
+  <div class="module" :class="{ 'module--solo': ui.solo }">
+    <StreamStrip v-if="!ui.solo" module="inspection" />
 
     <div class="col col--three">
       <AkPanel title="检测实时计数" en="LIVE COUNTER · 24H" :color="meta.color">
@@ -209,6 +209,7 @@ const alarms24h = computed(() => plant.alarms.filter((a) => a.module === 'inspec
 </template>
 
 <style scoped>
+.module--solo { grid-template-rows: minmax(0, 1fr); }
 .col--three { grid-template-rows: 250px 1fr 1fr; }
 .col--right { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) 170px 220px; }
 .center3 { grid-template-rows: minmax(0, 1fr) 192px 222px; }

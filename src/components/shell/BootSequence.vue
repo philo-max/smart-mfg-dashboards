@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { MODULES, MODULE_ORDER } from '@/data/modules'
+import { useUiStore } from '@/stores/ui'
 
 const emit = defineEmits<{ open: []; done: [] }>()
 
@@ -9,9 +10,10 @@ const OPEN_MS = 950
 const LINE_START_MS = 450
 const LINE_STEP_MS = 290
 
+const ui = useUiStore()
 const CHECKS = [
   { code: 'PLC-LINK', label: '点位网关' },
-  ...MODULE_ORDER.map((id) => ({ code: MODULES[id].code, label: MODULES[id].name })),
+  ...MODULE_ORDER.filter((id) => !ui.solo || id === ui.solo).map((id) => ({ code: MODULES[id].code, label: MODULES[id].name })),
 ]
 
 const percent = ref(0)

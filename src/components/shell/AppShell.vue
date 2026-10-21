@@ -14,7 +14,7 @@ import AgvView from '@/features/agv/AgvView.vue'
 import AssemblyView from '@/features/assembly/AssemblyView.vue'
 import InspectionView from '@/features/inspection/InspectionView.vue'
 import LogisticsView from '@/features/logistics/LogisticsView.vue'
-import { MODULE_ORDER } from '@/data/modules'
+import { MODULE_ORDER, MODULES, type ModuleId } from '@/data/modules'
 import { usePlantStore } from '@/stores/plant'
 import { useUiStore, type ViewId } from '@/stores/ui'
 
@@ -33,6 +33,8 @@ const VIEWS: Record<ViewId, Component> = {
 
 const ui = useUiStore()
 const plant = usePlantStore()
+const soloParam = new URLSearchParams(window.location.search).get('unit')
+if (soloParam && soloParam in MODULES) ui.enterSolo(soloParam as ModuleId)
 const scale = ref(1)
 const skipBoot = new URLSearchParams(window.location.search).has('noboot') || window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const contentReady = ref(skipBoot)
@@ -90,7 +92,7 @@ function onKey(e: KeyboardEvent) {
     e.preventDefault()
     plant.togglePause()
   } else if (e.key.toLowerCase() === 's') ui.toggleConsole()
-  else if (e.key.toLowerCase() === 't') ui.toggleTour()
+  else if (e.key.toLowerCase() === 't' && !ui.solo) ui.toggleTour()
 }
 
 onMounted(() => {
