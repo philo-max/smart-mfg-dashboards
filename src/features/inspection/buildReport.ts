@@ -1,6 +1,8 @@
 import { FPY_THRESHOLD, NOMINAL, TOLERANCE } from '@/data/sim/constants'
+import { inspectionMetrics } from '@/data/sim/metrics'
 import { inspectionTotals } from '@/data/sim/selectors'
-import type { PlantState } from '@/data/sim/types'
+import type { PlantAlarm, PlantState } from '@/data/sim/types'
+import { metricRows } from './metricText'
 import type { InspectionReport } from './reportExport'
 
 export function processCapability(samples: number[]) {
@@ -16,8 +18,11 @@ export function mttrOf(state: PlantState): number {
   return list.length ? Math.round((list.reduce((a, x) => a + x.minutes, 0) / list.length) * 10) / 10 : 0
 }
 
-export function buildReport(state: PlantState, now: Date = new Date()): InspectionReport {
+export function buildReport(state: PlantState, alarms: PlantAlarm[] = [], now: Date = new Date()): InspectionReport {
   const ins = state.inspection
+  const m = inspectionMetrics(state, alarms)
+  const board = metricRows(m)
+  const missed = board.filter((r) => r.level !== 'normal').map((r) => r.name)
   const k = inspectionTotals(state)
   const cap = processCapability(ins.tolerance)
   const mttr = mttrOf(state)
@@ -33,12 +38,18 @@ export function buildReport(state: PlantState, now: Date = new Date()): Inspecti
     (k.fpy < FPY_THRESHOLD ? `，低于 ${FPY_THRESHOLD}% 阈值` : '，达到阈值要求') +
     `。首要缺陷为「<b>${top.name}</b>」，占比 ${((top.value / defectSum) * 100).toFixed(1)}%；` +
     `合格率最低的检测位为 <b>${worst.name}</b>（${worst.rate.toFixed(2)}%）。<b>${peak.label}</b> 时段不合格率最高，` +
-    `同期检测设备功率 ${peak.power} kW，建议联动排查装配机器人与检测机器人状态。平均异常闭环耗时 <b>${mttr}</b> 分钟。`
+    `同期检测设备功率 ${peak.power} kW，建议联动排查装配机器人与检测机器人状态。平均异常闭环耗时 <b>${mttr}</b> 分钟。` +
+    (missed.length ? `十项核心指标中 <b>${10 - missed.length}</b> 项达标，待改进：${missed.join('、')}。` : '十项核心指标全部达标。')
 
   return {
     generatedAt: now,
     conclusion,
     sections: [
+      {
+        title: '核心指标（四类十项）',
+        head: ['分类', '指标', '数值', '目标', '状态'],
+        rows: board.map((r) => [r.group, r.name, r.value, r.target, r.status]),
+      },
       {
         title: '汇总指标',
         head: ['指标', '数值'],
@@ -60,8 +71,8 @@ export function buildReport(state: PlantState, now: Date = new Date()): Inspecti
       },
       {
         title: '异常闭环记录',
-        head: ['时间', '位置', '异常描述', '闭环耗时(分钟)'],
-        rows: ins.mttr.map((a) => [a.time, a.station, a.desc, a.minutes]),
+        head: ['时间', '位置', '异常描述', '响应(分钟)', '闭环耗时(分钟)'],
+        rows: ins.mttr.map((a) => [a.time, a.station, a.desc, a.respondMin, a.minutes]),
       },
     ],
   }

@@ -106,7 +106,12 @@ export const usePlantStore = defineStore('plant', () => {
   }
 
   function setAlarmStatus(id: number, status: AlarmStatus) {
-    alarms.value = alarms.value.map((a) => (a.id === id ? { ...a, status } : a))
+    alarms.value = alarms.value.map((a) => {
+      if (a.id !== id) return a
+      const ackTick = a.ackTick ?? (status === 'open' ? undefined : state.tick)
+      const doneTick = status === 'resolved' ? state.tick : a.doneTick
+      return { ...a, status, ackTick, doneTick }
+    })
   }
 
   const kpis = computed(() => plantKpis(state))

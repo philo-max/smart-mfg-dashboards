@@ -20,7 +20,7 @@ watch(
   () => props.open,
   (open) => {
     if (!open) return
-    report.value = buildReport(plant.state)
+    report.value = buildReport(plant.state, plant.alarms)
     blocked.value = false
   },
 )

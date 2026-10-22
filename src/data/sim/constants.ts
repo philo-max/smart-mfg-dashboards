@@ -20,6 +20,14 @@ export const TORQUE_MIN = 0.8
 export const TORQUE_MAX = 1.2
 export const TORQUE_POINTS = 30
 export const TAKE_TIME_S = 7.2
+/** 检测线节拍 = 瓶颈检测位耗时 + 上下料转运；不得超过产线节拍目标 TAKT_TARGET */
+export const INSPECTION_TRANSFER_S = 5
+export const STATION_CYCLE_BASE = [6.4, 7.2, 8.6, 8.1, 3.9] as const
+export const INSPECTION_PLAN_PER_HOUR = 100
+/** 在岗检测人员（1 名操作员 + 1 名巡检复核） */
+export const INSPECTION_OPERATORS = 2
+/** 抽检复核比例 */
+export const AUDIT_RATE = 0.1
 export const HISTORY_LEN = 30
 export const TRACE_MAX = 14
 export const NG_HISTORY_MAX = 60

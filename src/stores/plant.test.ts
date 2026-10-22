@@ -32,3 +32,32 @@ describe('plant store · 告警自动恢复', () => {
     if (after) expect(after.status).toBe('resolved')
   })
 })
+
+describe('plant store · 响应与闭环时刻', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('点「处理」记录开始处理的 tick，点「解决」记录闭环的 tick', () => {
+    const plant = usePlantStore()
+    for (let i = 0; i < 30; i++) plant.tick()
+    const target = plant.alarms.find((a) => a.status === 'open')!
+    plant.tick()
+    plant.setAlarmStatus(target.id, 'handling')
+    const acked = plant.alarms.find((a) => a.id === target.id)!
+    expect(acked.ackTick).toBe(plant.state.tick)
+    plant.tick()
+    plant.setAlarmStatus(target.id, 'resolved')
+    const done = plant.alarms.find((a) => a.id === target.id)!
+    expect(done.ackTick).toBe(acked.ackTick)
+    expect(done.doneTick).toBe(plant.state.tick)
+  })
+
+  it('跳过「处理」直接「解决」时，开始处理时刻补为闭环时刻', () => {
+    const plant = usePlantStore()
+    for (let i = 0; i < 30; i++) plant.tick()
+    const target = plant.alarms.find((a) => a.status === 'open')!
+    plant.setAlarmStatus(target.id, 'resolved')
+    const done = plant.alarms.find((a) => a.id === target.id)!
+    expect(done.ackTick).toBe(plant.state.tick)
+    expect(done.doneTick).toBe(plant.state.tick)
+  })
+})

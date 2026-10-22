@@ -106,3 +106,30 @@ describe('solo unit mode', () => {
     expect(ui.focus).toBe('ng')
   })
 })
+
+describe('inspection sub pages', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('defaults to the overview page and switches by id', () => {
+    const ui = useUiStore()
+    expect(ui.inspectionPage).toBe('overview')
+    ui.setInspectionPage('quality')
+    expect(ui.inspectionPage).toBe('quality')
+  })
+
+  it('opens a given sub page when navigating to inspection with that focus', () => {
+    const ui = useUiStore()
+    ui.endBoot()
+    ui.navigate('inspection', 'ng')
+    expect(ui.inspectionPage).toBe('quality')
+    expect(ui.focus).toBe('ng')
+  })
+
+  it('keeps the chosen sub page when entering inspection without a focus', () => {
+    const ui = useUiStore()
+    ui.endBoot()
+    ui.setInspectionPage('resource')
+    ui.navigate('inspection')
+    expect(ui.inspectionPage).toBe('resource')
+  })
+})

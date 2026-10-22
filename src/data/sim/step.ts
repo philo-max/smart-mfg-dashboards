@@ -1,6 +1,7 @@
 import { type Rng, pad2 } from './rng'
 import { stepAgv, stepLogistics, stepWarehouse } from './step-flow'
 import { stepAssembly, stepInspection } from './step-quality'
+import { rollOps } from './ops'
 import type { AlarmDraft, PlantState } from './types'
 
 /** 装配质量自发漂移（刀具磨损等），与设备故障触发的漂移叠加 */
@@ -13,6 +14,7 @@ function rollHour(state: PlantState, now: Date) {
   if (hourly[hourly.length - 1].label === label) return
   hourly.push({ label, pass: 0, fail: 0, power: hourly[hourly.length - 1].power })
   if (hourly.length > HOURLY_WINDOW) hourly.shift()
+  rollOps(state, HOURLY_WINDOW)
   const orders = state.logistics.orderHourly
   orders.push({ label, total: 0, onTime: 0 })
   if (orders.length > HOURLY_WINDOW) orders.shift()

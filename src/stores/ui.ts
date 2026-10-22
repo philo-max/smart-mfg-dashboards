@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { MODULES, type ModuleId } from '@/data/modules'
+import type { InspectionPageId } from '@/features/inspection/pages'
 
 export type ViewId = 'overview' | ModuleId
 export type TransitPhase = 'idle' | 'cover' | 'reveal'
@@ -19,6 +20,7 @@ interface PendingNav {
 export const useUiStore = defineStore('ui', () => {
   const view = ref<ViewId>('overview')
   const solo = ref<ModuleId | null>(null)
+  const inspectionPage = ref<InspectionPageId>('overview')
   const focus = ref<string | null>(null)
   const reducedMotion = ref(false)
   const phase = ref<TransitPhase>('idle')
@@ -33,9 +35,14 @@ export const useUiStore = defineStore('ui', () => {
 
   const activeModule = computed(() => (view.value === 'overview' ? null : MODULES[view.value]))
 
+  function setInspectionPage(id: InspectionPageId) {
+    inspectionPage.value = id
+  }
+
   function swap(next: ViewId, nextFocus: string | null) {
     focus.value = nextFocus
     view.value = next
+    if (next === 'inspection' && nextFocus === 'ng') inspectionPage.value = 'quality'
   }
 
   function enterSolo(id: ModuleId) {
@@ -121,8 +128,8 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   return {
-    view, solo, focus, reducedMotion, consoleOpen, traceRfid, causeAlarmId, tour, activeModule, phase, target, booting,
-    enterSolo, navigate, commit, finish, endBoot, setCurtainReady, back, clearFocus, setReducedMotion, toggleConsole, toggleTour,
+    view, solo, inspectionPage, focus, reducedMotion, consoleOpen, traceRfid, causeAlarmId, tour, activeModule, phase, target, booting,
+    enterSolo, setInspectionPage, navigate, commit, finish, endBoot, setCurtainReady, back, clearFocus, setReducedMotion, toggleConsole, toggleTour,
     openTrace, closeTrace, openCause, closeCause,
   }
 })

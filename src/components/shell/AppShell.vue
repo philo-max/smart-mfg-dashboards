@@ -15,6 +15,7 @@ import AssemblyView from '@/features/assembly/AssemblyView.vue'
 import InspectionView from '@/features/inspection/InspectionView.vue'
 import LogisticsView from '@/features/logistics/LogisticsView.vue'
 import { MODULE_ORDER, MODULES, type ModuleId } from '@/data/modules'
+import { INSPECTION_PAGES, isInspectionPage } from '@/features/inspection/pages'
 import { usePlantStore } from '@/stores/plant'
 import { useUiStore, type ViewId } from '@/stores/ui'
 
@@ -35,6 +36,8 @@ const ui = useUiStore()
 const plant = usePlantStore()
 const soloParam = new URLSearchParams(window.location.search).get('unit')
 if (soloParam && soloParam in MODULES) ui.enterSolo(soloParam as ModuleId)
+const pageParam = new URLSearchParams(window.location.search).get('page')
+if (isInspectionPage(pageParam)) ui.setInspectionPage(pageParam)
 const scale = ref(1)
 const skipBoot = new URLSearchParams(window.location.search).has('noboot') || window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const contentReady = ref(skipBoot)
@@ -87,7 +90,10 @@ function onKey(e: KeyboardEvent) {
   if (e.ctrlKey || e.metaKey || e.altKey || ui.booting) return
   if (document.querySelector(USER_MODAL)) return
   if (e.key === '0') ui.back()
-  else if (e.key >= '1' && e.key <= '5') ui.navigate(MODULE_ORDER[Number(e.key) - 1])
+  else if (e.key >= '1' && e.key <= '5') {
+    if (ui.solo === 'inspection') ui.setInspectionPage(INSPECTION_PAGES[Number(e.key) - 1].id)
+    else ui.navigate(MODULE_ORDER[Number(e.key) - 1])
+  }
   else if (e.key === ' ') {
     e.preventDefault()
     plant.togglePause()

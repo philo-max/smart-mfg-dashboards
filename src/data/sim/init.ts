@@ -7,6 +7,7 @@ import {
 import { torqueCurve } from './torque'
 import { makeInspectionRecord } from './record'
 import { initLineage } from './lineage'
+import { initOps, seedOee } from './ops'
 import type {
   AgvState, AssemblyState, Equipment, HourBucket, InspectionState, LogisticsState, OrderBucket,
   PlantState, TraceRecord, WarehouseCell, WarehouseState, WorkpieceRef,
@@ -140,12 +141,13 @@ function initInspection(rng: Rng, now: Date): InspectionState {
       }),
     ),
     mttr: [
-      { time: '03:12', station: '检测位2', desc: 'Alarm_GongWei 连续 3 件孔径超差', minutes: 18 },
-      { time: '07:45', station: '检测位3', desc: '视觉光源亮度衰减误判', minutes: 26 },
-      { time: '11:20', station: '检测位5', desc: 'Alarm_RFID 标签读取失败', minutes: 9 },
-      { time: '14:05', station: '检测机器人', desc: 'Alarm_Pressure 气压不足', minutes: 21 },
+      { time: '03:12', station: '检测位2', desc: 'Alarm_GongWei 连续 3 件孔径超差', respondMin: 3, minutes: 18 },
+      { time: '07:45', station: '检测位3', desc: '视觉光源亮度衰减误判', respondMin: 6, minutes: 26 },
+      { time: '11:20', station: '检测位5', desc: 'Alarm_RFID 标签读取失败', respondMin: 2, minutes: 9 },
+      { time: '14:05', station: '检测机器人', desc: 'Alarm_Pressure 气压不足', respondMin: 4, minutes: 21 },
     ],
     takeTime: TAKE_TIME_S,
+    ops: initOps(hourly),
   }
 }
 
@@ -196,7 +198,7 @@ function initLogistics(rng: Rng, now: Date): LogisticsState {
 
 export function createPlant(rng: Rng, now: Date = new Date()): PlantState {
   const warehouse = initWarehouse(rng, now)
-  return {
+  const state: PlantState = {
     tick: 0,
     warehouse,
     lineage: initLineage(warehouse.cells),
@@ -207,4 +209,6 @@ export function createPlant(rng: Rng, now: Date = new Date()): PlantState {
     cooldowns: {},
     faultTally: {},
   }
+  seedOee(state)
+  return state
 }

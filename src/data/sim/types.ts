@@ -135,7 +135,40 @@ export interface MttrAlarm {
   time: string
   station: string
   desc: string
+  /** 发现 → 开始处理（分钟） */
+  respondMin: number
+  /** 开始处理 → 闭环（分钟） */
   minutes: number
+}
+
+export interface Consumable {
+  name: string
+  /** 每检测一件的耗材成本（元） */
+  unitCost: number
+  /** 额定寿命（检测件数）与已用件数 */
+  lifeCount: number
+  used: number
+  /** 剩余寿命（%） */
+  lifePct: number
+}
+
+/** 检测单元运营指标的状态：节拍、计划、复核、重复性、耗材、异常基数 */
+export interface InspectionOps {
+  /** 每小时检测线平均节拍（s），与 hourly 对齐 */
+  taktHourly: number[]
+  /** 每小时设备 OEE（%），与 hourly 对齐 */
+  oeeHourly: number[]
+  /** 每小时耗材单耗（元/件），与 hourly 对齐 */
+  consumableHourly: number[]
+  /** 五个检测位当前单件耗时（s），含上下料 */
+  stationCycle: number[]
+  /** 抽检复核：抽检数 / 漏检 / 误判 */
+  audit: { sampled: number; missed: number; falseCall: number }
+  /** 五个检测位同一标准件重复检测的判定一致率（%） */
+  repeat: number[]
+  consumables: Consumable[]
+  /** 24h 异常总数与已闭环数（历史基数，本次告警另算） */
+  exceptions: { total: number; closed: number }
 }
 
 export interface InspectionState {
@@ -150,6 +183,7 @@ export interface InspectionState {
   mttr: MttrAlarm[]
   /** 单件检测耗时（s） */
   takeTime: number
+  ops: InspectionOps
 }
 
 export interface FaultRecord {
@@ -207,6 +241,9 @@ export interface PlantAlarm {
   time: string
   /** 产生时的 tick，用于自动恢复 */
   tick: number
+  /** 开始处理 / 闭环时的 tick，用于响应时间与闭环统计 */
+  ackTick?: number
+  doneTick?: number
   focus?: string
 }
 

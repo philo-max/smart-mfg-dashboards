@@ -8,6 +8,7 @@ import { makeInspectionRecord } from './record'
 import { logEvent } from './lineage'
 import { nextRfid } from './init'
 import { canAlarm } from './step-flow'
+import { stepOps } from './ops'
 import type { AlarmDraft, PlantState } from './types'
 
 const BASE_FAIL_RATE = 0.006
@@ -120,6 +121,7 @@ export function stepInspection(state: PlantState, rng: Rng, units: number, now: 
   if (ins.records.length > MAX_RECORDS) ins.records.length = MAX_RECORDS
   if (ins.ngHistory.length > NG_HISTORY_MAX) ins.ngHistory.length = NG_HISTORY_MAX
   if (units > 0) ins.takeTime = round(rng.gaussian(TAKE_TIME_S, 0.5), 1)
+  stepOps(state, units)
 
   const recentFails = ins.records.slice(0, INSPECTION_ALARM_WINDOW).filter((r) => !r.pass).length
   if (result.fails > 0 && recentFails >= INSPECTION_ALARM_FAILS && canAlarm(state, 'inspection', 15)) {
