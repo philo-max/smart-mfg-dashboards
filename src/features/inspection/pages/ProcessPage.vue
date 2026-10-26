@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import AkPanel from '@/components/ui/AkPanel.vue'
-import RecordsPanel from '../RecordsPanel.vue'
 import EventLog from '@/components/ui/EventLog.vue'
 const RobotScene = defineAsyncComponent(() => import('../RobotScene.vue'))
 import ProcessChain from '../process/ProcessChain.vue'
@@ -16,8 +15,6 @@ const meta = MODULES.inspection
 const plant = usePlantStore()
 const snap = useProcess()
 const latest = computed(() => plant.state.inspection.records[0] ?? null)
-const filter = ref<'all' | 'fail'>('all')
-const records = computed(() => (filter.value === 'all' ? plant.state.inspection.records : plant.state.inspection.ngHistory).slice(0, 8))
 const tone = computed(() => (snap.value.halted ? 'halt' : snap.value.verdict === false ? 'ng' : snap.value.stepIndex === 0 ? 'idle' : 'ok'))
 const cards = computed(() =>
   INSPECTION_STATIONS.map((s, i) => ({ ...s, ok: latest.value ? latest.value.positions[i] : true })),
@@ -32,15 +29,7 @@ const headline = computed(() => {
 <template>
   <div class="col col--left colL">
     <LocatePanel :snap="snap" />
-    <RecordsPanel
-      v-model:filter="filter"
-      :records="records"
-      :color="meta.color"
-      :defect-filter="null"
-      :position-filter="null"
-      :filtered="false"
-      @clear="filter = 'all'"
-    />
+    <EventLog module="inspection" :color="meta.color" />
   </div>
 
   <div class="col col--center colC">
@@ -64,14 +53,14 @@ const headline = computed(() => {
 
   <div class="col col--right colR">
     <SortVisionPanel :snap="snap" />
-    <EventLog module="inspection" :color="meta.color" />
   </div>
 </template>
 
 <style scoped>
-.colL { grid-template-rows: 220px 190px minmax(0, 1fr); }
+.colL, .colC, .colR { grid-template-columns: minmax(0, 1fr); }
+.colL { grid-template-rows: 220px 170px minmax(0, 1fr); }
 .colC { grid-template-rows: 112px minmax(0, 1fr) 150px; }
-.colR { grid-template-rows: 300px 280px minmax(0, 1fr); }
+.colR { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
 
 .hint { font-size: 13px; color: var(--text-muted); }
 .pos5 { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }

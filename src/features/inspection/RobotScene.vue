@@ -67,7 +67,7 @@ function buildScene(el: HTMLDivElement) {
 
   scene = new THREE.Scene()
   camera = new THREE.PerspectiveCamera(36, 1, 0.1, 50)
-  camera.position.set(3.4, 1.9, 4.2)
+  camera.position.set(3.2, 1.8, 4)
 
   scene.add(new THREE.HemisphereLight(0xcfe9ff, 0x0a1220, 1.4))
   const key = new THREE.DirectionalLight(0xffffff, 2.2)

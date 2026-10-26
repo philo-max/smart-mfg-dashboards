@@ -48,8 +48,8 @@ const rows = computed(() => [
 .is-bad { color: var(--signal-risk); }
 .state { font-size: 13px; }
 
-.lamps { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.lamp { --c: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 8px; background: var(--bg-panel-2); border: 1px solid transparent; opacity: 0.55; }
+.lamps { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.lamp { --c: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; text-align: center; background: var(--bg-panel-2); border: 1px solid transparent; opacity: 0.55; }
 .lamp i { width: 16px; height: 16px; border-radius: 50%; background: var(--c); opacity: 0.45; }
 .lamp b { font-size: 14px; color: var(--text-primary); }
 .lamp small { font-size: 11px; color: var(--text-muted); }
