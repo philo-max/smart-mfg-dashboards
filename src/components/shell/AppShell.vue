@@ -90,7 +90,7 @@ function onKey(e: KeyboardEvent) {
   if (e.ctrlKey || e.metaKey || e.altKey || ui.booting) return
   if (document.querySelector(USER_MODAL)) return
   if (e.key === '0') ui.back()
-  else if (e.key >= '1' && e.key <= '5') {
+  else if (e.key >= '1' && e.key <= (ui.solo === 'inspection' ? String(INSPECTION_PAGES.length) : '5')) {
     if (ui.solo === 'inspection') ui.setInspectionPage(INSPECTION_PAGES[Number(e.key) - 1].id)
     else ui.navigate(MODULE_ORDER[Number(e.key) - 1])
   }

@@ -4,6 +4,7 @@ import StreamStrip from '@/components/ui/StreamStrip.vue'
 import InspectionNav from './InspectionNav.vue'
 import InspectionReportModal from './InspectionReportModal.vue'
 import OverviewPage from './pages/OverviewPage.vue'
+import ProcessPage from './pages/ProcessPage.vue'
 import EfficiencyPage from './pages/EfficiencyPage.vue'
 import QualityPage from './pages/QualityPage.vue'
 import ResourcePage from './pages/ResourcePage.vue'
@@ -13,6 +14,7 @@ import { useUiStore } from '@/stores/ui'
 
 const PAGES: Record<InspectionPageId, Component> = {
   overview: OverviewPage,
+  process: ProcessPage,
   efficiency: EfficiencyPage,
   quality: QualityPage,
   resource: ResourcePage,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 import AkPanel from '@/components/ui/AkPanel.vue'
 import StatTile from '@/components/ui/StatTile.vue'
 import PointsPanel from '@/components/ui/PointsPanel.vue'
@@ -8,7 +8,11 @@ import EventLog from '@/components/ui/EventLog.vue'
 import EChart from '@/components/charts/EChart.vue'
 import RecordsPanel from '../RecordsPanel.vue'
 import InspectionDetailModal from '../InspectionDetailModal.vue'
-import { energyOption, trendOption } from '../inspectionCharts'
+const RobotScene = defineAsyncComponent(() => import('../RobotScene.vue'))
+import ProcessChain from '../process/ProcessChain.vue'
+import LocatePanel from '../process/LocatePanel.vue'
+import { useProcess } from '../useProcess'
+import { trendOption } from '../inspectionCharts'
 import { targetText } from '../metricText'
 import type { InspectionPageId } from '../pages'
 import { MODULES } from '@/data/modules'
@@ -20,7 +24,6 @@ import { useUiStore } from '@/stores/ui'
 
 type MetricKey = Exclude<keyof ReturnType<typeof inspectionMetrics>, 'basis'>
 
-const POWER_ALERT_KW = 7.5
 const meta = MODULES.inspection
 const plant = usePlantStore()
 const ui = useUiStore()
@@ -40,7 +43,8 @@ const detailFocus = ref<'pass' | 'fail' | null>(null)
 const hourHighlight = ref<string | null>(null)
 
 const trend = computed(() => trendOption(ins.value.hourly, FPY_THRESHOLD))
-const energy = computed(() => energyOption(ins.value.hourly, POWER_ALERT_KW))
+const proc = useProcess()
+const sceneTone = computed(() => (proc.value.halted ? 'halt' : proc.value.verdict === false ? 'ng' : proc.value.stepIndex === 0 ? 'idle' : 'ok'))
 const records = computed(() =>
   (filter.value === 'all' && positionFilter.value === null ? ins.value.records : ins.value.ngHistory)
     .filter((r) => positionFilter.value === null || !r.positions[positionFilter.value])
@@ -92,10 +96,19 @@ function closeDetail() {
   </div>
 
   <div class="col col--center center3">
-    <AkPanel title="质量趋势" en="QUALITY TREND · FPY / PPM" :color="meta.color">
-      <template #actions><span class="hint">点击小时查看明细</span></template>
-      <EChart :option="trend" @click="onTrendClick" />
+    <AkPanel title="检测流程链" en="PROCESS CHAIN" :color="meta.color">
+      <template #actions><button type="button" class="more" @click="ui.setInspectionPage('process')">流程监控 ›</button></template>
+      <ProcessChain :snap="proc" />
     </AkPanel>
+    <div class="hero">
+      <AkPanel title="机械臂分拣工位 · 3D" en="3D DIGITAL TWIN" :color="meta.color" flush>
+        <RobotScene :tone="sceneTone" :action="proc.sort.action" />
+      </AkPanel>
+      <AkPanel title="质量趋势" en="QUALITY TREND · FPY / PPM" :color="meta.color">
+        <template #actions><span class="hint">点击小时查看明细</span></template>
+        <EChart :option="trend" @click="onTrendClick" />
+      </AkPanel>
+    </div>
     <AkPanel title="检测工位实时状态" en="STATION LIVE STATUS" :color="meta.color">
       <div class="live">
         <div class="live__info">
@@ -141,7 +154,7 @@ function closeDetail() {
   </div>
 
   <div class="col col--right">
-    <AkPanel title="能耗 × 质量联动" en="ENERGY × QUALITY"><EChart :option="energy" /></AkPanel>
+    <LocatePanel :snap="proc" />
     <EventLog module="inspection" :color="meta.color" />
     <PointsPanel unit="inspection" :color="meta.color" />
   </div>
@@ -151,8 +164,9 @@ function closeDetail() {
 
 <style scoped>
 .col--wall { grid-template-rows: repeat(2, minmax(0, 1fr)) repeat(2, minmax(0, 0.9fr)); }
-.col--right { grid-template-rows: minmax(0, 1fr) 210px 230px; }
-.center3 { grid-template-rows: minmax(0, 1fr) 192px 222px; }
+.col--right { grid-template-rows: 190px 170px minmax(0, 1fr) 200px; }
+.center3 { grid-template-rows: 104px minmax(0, 1fr) 192px 222px; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; min-height: 0; }
 
 .wall { flex: 1; display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 8px; }
 .wall :deep(.stat) { padding: 8px 10px; }

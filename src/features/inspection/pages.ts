@@ -1,4 +1,4 @@
-export type InspectionPageId = 'overview' | 'efficiency' | 'quality' | 'resource' | 'exception'
+export type InspectionPageId = 'overview' | 'process' | 'efficiency' | 'quality' | 'resource' | 'exception'
 
 export interface InspectionPageMeta {
   id: InspectionPageId
@@ -10,6 +10,7 @@ export interface InspectionPageMeta {
 
 export const INSPECTION_PAGES: InspectionPageMeta[] = [
   { id: 'overview', name: '检测总览', en: 'OVERVIEW', question: '检测单元现在整体怎么样？' },
+  { id: 'process', name: '流程监控', en: 'PROCESS', question: '设备动作链卡在了哪一步？' },
   { id: 'efficiency', name: '检测效率', en: 'EFFICIENCY', question: '检测快不快，会不会拖慢产线节拍？' },
   { id: 'quality', name: '检测质量', en: 'QUALITY', question: '检得准不准，能不能把不良品筛出来？' },
   { id: 'resource', name: '资源消耗', en: 'RESOURCE', question: '设备和耗材用得值不值？' },
