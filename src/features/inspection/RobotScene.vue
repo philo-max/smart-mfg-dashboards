@@ -16,6 +16,7 @@ const PIXEL_RATIO_CAP = 1.5
 
 const host = ref<HTMLDivElement | null>(null)
 const status = ref<'loading' | 'ready' | 'error'>('loading')
+const progress = ref(0)
 const ui = useUiStore()
 
 let renderer: THREE.WebGLRenderer | null = null
@@ -127,7 +128,9 @@ function loadModel() {
       scene.add(model)
       status.value = 'ready'
     },
-    undefined,
+    (e) => {
+      if (e.lengthComputable) progress.value = Math.round((e.loaded / e.total) * 100)
+    },
     () => {
       status.value = 'error'
     },
@@ -168,7 +171,7 @@ onBeforeUnmount(() => {
   <div class="scene">
     <div ref="host" class="scene__host"></div>
     <div class="scene__tag" :class="`is-${tone}`"><i></i>机械臂分拣工位 · {{ action }}</div>
-    <p v-if="status === 'loading'" class="scene__msg">3D 模型加载中…</p>
+    <p v-if="status === 'loading'" class="scene__msg">3D 模型加载中… {{ progress }}%</p>
     <p v-else-if="status === 'error'" class="scene__msg">3D 模型加载失败，请检查网络或浏览器 WebGL 支持</p>
     <p class="scene__hint">拖拽旋转 · 滚轮缩放</p>
   </div>
